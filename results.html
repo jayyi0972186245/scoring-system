@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>即時成績總表</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#070d1a;--surface:#0e1628;--surface2:#162039;--border:#1e2d4f;--accent:#60a5fa;--accent2:#a78bfa;--green:#4ade80;--yellow:#facc15;--red:#f87171;--text:#dbeafe;--muted:#6b7fa8}
+  body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
+  .logo{font-size:20px;font-weight:700;color:var(--accent);letter-spacing:.02em}
+  .live-chip{display:flex;align-items:center;gap:6px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.25);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--green)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  .container{max-width:1100px;margin:0 auto;padding:28px 20px}
+  .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center}
+  .stat-num{font-size:30px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--accent)}
+  .stat-lbl{font-size:12px;color:var(--muted);margin-top:4px}
+  .toolbar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+  .search{flex:1;min-width:160px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
+  .search:focus{border-color:var(--accent)}
+  .ftab{padding:7px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:12px;font-weight:500;transition:.2s}
+  .ftab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+  button.export{background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500}
+  button.export:hover{border-color:var(--accent);color:var(--accent)}
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  thead{background:var(--surface2)}
+  th{padding:12px 16px;text-align:left;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:500;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+  th:hover{color:var(--accent)}
+  th .sort-icon{margin-left:4px;opacity:.4}
+  th.sorted .sort-icon{opacity:1;color:var(--accent)}
+  td{padding:13px 16px;border-bottom:1px solid rgba(30,45,79,.5);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:rgba(96,165,250,.04)}
+  .c-name{font-weight:600;font-size:15px}
+  .c-num{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:12px}
+  .score{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px}
+  .score-good{color:var(--green)}
+  .score-mid{color:var(--yellow)}
+  .score-low{color:var(--red)}
+  .score-none{color:var(--muted)}
+  .tag{font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600;white-space:nowrap}
+  .tag-room{background:rgba(167,139,250,.12);color:var(--accent2)}
+  .tag-none{background:var(--surface2);color:var(--muted)}
+  .teacher-list{font-size:11px;color:var(--muted);margin-top:2px}
+  .bar-wrap{display:flex;align-items:center;gap:8px}
+  .bar{height:6px;border-radius:3px;background:var(--border);flex:1;overflow:hidden;min-width:60px}
+  .bar-fill{height:100%;border-radius:3px;transition:.4s}
+  .rank{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted);min-width:24px;text-align:right}
+  .total-score{font-size:18px}
+  .badge-done{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:var(--green);font-size:11px;padding:2px 8px;border-radius:10px}
+  .badge-partial{background:rgba(250,204,21,.08);border:1px solid rgba(250,204,21,.2);color:var(--yellow);font-size:11px;padding:2px 8px;border-radius:10px}
+  .badge-none{background:var(--surface2);color:var(--muted);font-size:11px;padding:2px 8px;border-radius:10px}
+  .no-data{text-align:center;padding:60px;color:var(--muted)}
+  @media(max-width:700px){.stats-grid{grid-template-columns:repeat(2,1fr)}.toolbar{flex-direction:column}table{font-size:12px}th,td{padding:9px 10px}}
+  @media print{header .live-chip,.toolbar button{display:none}body{background:#fff;color:#000}.table-wrap{border:1px solid #ccc}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">📊 即時成績總表</div>
+  <div class="live-chip"><div class="dot"></div>即時同步中</div>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <a href="index.html" style="color:var(--muted);font-size:13px;text-decoration:none">管理後台</a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num" id="s-total">0</div>
+      <div class="stat-lbl">總考生數</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="s-complete">0</div>
+      <div class="stat-lbl">完整評分</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="s-avg-iv">—</div>
+      <div class="stat-lbl">面試平均</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" id="s-avg-pr">—</div>
+      <div class="stat-lbl">術科平均</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input class="search" id="search" placeholder="🔍 搜尋考生..." oninput="renderTable()">
+    <div class="ftab active" onclick="setFilter('all',this)">全部</div>
+    <div class="ftab" onclick="setFilter('complete',this)">完整評分</div>
+    <div class="ftab" onclick="setFilter('partial',this)">部分評分</div>
+    <div class="ftab" onclick="setFilter('none',this)">未評分</div>
+    <button class="export" onclick="exportCSV()">📤 匯出 CSV</button>
+    <button class="export" onclick="window.print()">🖨️ 列印</button>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="setSort('number')">號碼 <span class="sort-icon">↕</span></th>
+          <th onclick="setSort('name')">考生 <span class="sort-icon">↕</span></th>
+          <th onclick="setSort('interview')">面試成績 <span class="sort-icon">↕</span></th>
+          <th onclick="setSort('practical')">術科成績 <span class="sort-icon">↕</span></th>
+          <th onclick="setSort('total')">綜合 <span class="sort-icon">↕</span></th>
+          <th>教室</th>
+          <th>狀態</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="7" class="no-data">載入中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+let candidates = {};
+let filter = 'all';
+let sortKey = 'number';
+let sortDir = 1;
+
+db.ref('candidates').on('value', snap=>{
+  candidates=snap.val()||{};
+  updateStats();
+  renderTable();
+});
+
+function avg(obj){
+  if(!obj)return null;
+  const v=Object.values(obj).filter(x=>x!==null&&x!==undefined&&x!=='');
+  if(!v.length)return null;
+  return v.reduce((a,b)=>a+Number(b),0)/v.length;
+}
+
+function total(c){
+  const iv=avg(c.interviewScores), pr=avg(c.practicalScores);
+  if(iv===null&&pr===null)return null;
+  if(iv===null)return pr;
+  if(pr===null)return iv;
+  return (iv+pr)/2;
+}
+
+function statusOf(c){
+  const iv=avg(c.interviewScores)!==null, pr=avg(c.practicalScores)!==null;
+  if(iv&&pr)return'complete';
+  if(iv||pr)return'partial';
+  return'none';
+}
+
+function updateStats(){
+  const list=Object.values(candidates);
+  document.getElementById('s-total').textContent=list.length;
+  const done=list.filter(c=>statusOf(c)==='complete');
+  document.getElementById('s-complete').textContent=done.length;
+  const avgIv=done.length?done.reduce((a,c)=>a+(avg(c.interviewScores)||0),0)/done.length:null;
+  const avgPr=done.length?done.reduce((a,c)=>a+(avg(c.practicalScores)||0),0)/done.length:null;
+  document.getElementById('s-avg-iv').textContent=avgIv!==null?avgIv.toFixed(1)+'分':'—';
+  document.getElementById('s-avg-pr').textContent=avgPr!==null?avgPr.toFixed(1)+'分':'—';
+}
+
+function setFilter(f,el){
+  filter=f;
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.toggle('active',t===el));
+  renderTable();
+}
+
+function setSort(k){
+  if(sortKey===k) sortDir*=-1; else{sortKey=k;sortDir=1;}
+  renderTable();
+}
+
+function scoreColor(v){
+  if(v===null)return'score-none';
+  return v>=80?'score-good':v>=60?'score-mid':'score-low';
+}
+
+function barColor(v){
+  if(v===null)return'#2e3352';
+  return v>=80?'#4ade80':v>=60?'#facc15':'#f87171';
+}
+
+function renderTable(){
+  const q=(document.getElementById('search').value||'').toLowerCase();
+  let list=Object.values(candidates).filter(c=>{
+    if(q&&!c.name.toLowerCase().includes(q)&&!c.number.includes(q))return false;
+    if(filter!=='all'&&statusOf(c)!==filter)return false;
+    return true;
+  });
+
+  list.sort((a,b)=>{
+    let va,vb;
+    if(sortKey==='number'){va=a.number;vb=b.number;return va.localeCompare(vb)*sortDir;}
+    if(sortKey==='name'){va=a.name;vb=b.name;return va.localeCompare(vb)*sortDir;}
+    if(sortKey==='interview'){va=avg(a.interviewScores)??-1;vb=avg(b.interviewScores)??-1;}
+    if(sortKey==='practical'){va=avg(a.practicalScores)??-1;vb=avg(b.practicalScores)??-1;}
+    if(sortKey==='total'){va=total(a)??-1;vb=total(b)??-1;}
+    return (va-vb)*sortDir;
+  });
+
+  // Rank by total (for display)
+  const ranked=[...Object.values(candidates)].filter(c=>total(c)!==null).sort((a,b)=>(total(b)||0)-(total(a)||0));
+  const rankMap={};ranked.forEach((c,i)=>rankMap[c.id]=i+1);
+
+  const tbody=document.getElementById('tbody');
+  if(!list.length){tbody.innerHTML='<tr><td colspan="7" class="no-data">沒有符合的考生</td></tr>';return;}
+
+  tbody.innerHTML=list.map(c=>{
+    const iv=avg(c.interviewScores), pr=avg(c.practicalScores), tot=total(c);
+    const st=statusOf(c);
+    const ivTeachers=Object.keys(c.interviewScores||{}).join('、');
+    const prTeachers=Object.keys(c.practicalScores||{}).join('、');
+    const rank=rankMap[c.id]?`#${rankMap[c.id]}`:'—';
+    return `<tr>
+      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--muted)">${c.number}</span></td>
+      <td>
+        <div class="c-name">${c.name}</div>
+      </td>
+      <td>
+        ${iv!==null?`<div class="bar-wrap">
+          <div class="bar"><div class="bar-fill" style="width:${iv}%;background:${barColor(iv)}"></div></div>
+          <span class="score ${scoreColor(iv)}">${iv.toFixed(1)}</span>
+        </div>
+        <div class="teacher-list">${ivTeachers}</div>`:`<span class="score score-none">未評</span>`}
+      </td>
+      <td>
+        ${pr!==null?`<div class="bar-wrap">
+          <div class="bar"><div class="bar-fill" style="width:${pr}%;background:${barColor(pr)}"></div></div>
+          <span class="score ${scoreColor(pr)}">${pr.toFixed(1)}</span>
+        </div>
+        <div class="teacher-list">${prTeachers}</div>`:`<span class="score score-none">未評</span>`}
+      </td>
+      <td>
+        <span class="score total-score ${scoreColor(tot)}">${tot!==null?tot.toFixed(1):'—'}</span>
+        ${tot!==null?`<div class="rank">${rank}</div>`:''}
+      </td>
+      <td>${c.assignedRoom?`<span class="tag tag-room">${c.assignedRoom}</span>`:`<span class="tag tag-none">未指派</span>`}</td>
+      <td>${st==='complete'?'<span class="badge-done">完整</span>':st==='partial'?'<span class="badge-partial">部分</span>':'<span class="badge-none">未評</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCSV(){
+  const rows=[['號碼','姓名','面試平均','面試老師','術科平均','術科老師','綜合','指派教室','狀態']];
+  Object.values(candidates).sort((a,b)=>a.number.localeCompare(b.number)).forEach(c=>{
+    const iv=avg(c.interviewScores), pr=avg(c.practicalScores), tot=total(c);
+    rows.push([c.number,c.name,iv?.toFixed(1)||'',Object.keys(c.interviewScores||{}).join('/'),pr?.toFixed(1)||'',Object.keys(c.practicalScores||{}).join('/'),tot?.toFixed(1)||'',c.assignedRoom||'',statusOf(c)==='complete'?'完整':statusOf(c)==='partial'?'部分':'未評']);
+  });
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='即時成績總表.csv';a.click();
+}
+</script>
+</body>
+</html>

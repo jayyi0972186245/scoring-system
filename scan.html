@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>掃碼指派教室</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3352;--accent:#4f8ef7;--accent2:#7c6af7;--green:#3dd68c;--yellow:#f7c948;--red:#f75f5f;--text:#e8eaf6;--muted:#8892b0}
+  body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:24px 16px}
+  h1{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:4px}
+  .sub{color:var(--muted);font-size:14px;margin-bottom:32px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;width:100%;max-width:440px;margin-bottom:20px}
+  .card h2{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px}
+  #reader{border-radius:12px;overflow:hidden;width:100%}
+  .result-card{background:var(--surface2);border:2px solid var(--green);border-radius:16px;padding:24px;text-align:center;display:none}
+  .result-card.show{display:block}
+  .candidate-name{font-size:26px;font-weight:700;margin-bottom:4px}
+  .candidate-num{color:var(--muted);font-size:14px;margin-bottom:20px}
+  .room-display{font-size:48px;font-weight:700;color:var(--green);font-family:monospace;margin:12px 0}
+  .room-label{color:var(--muted);font-size:13px}
+  .teachers-line{font-size:13px;color:var(--accent2);margin-top:12px}
+  button{cursor:pointer;font-family:inherit;font-weight:600;border:none;border-radius:10px;padding:12px 24px;font-size:15px;transition:.2s;width:100%;margin-top:12px}
+  .btn-scan{background:var(--accent);color:#fff}
+  .btn-scan:hover{background:#3a7de8}
+  .btn-next{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+  .btn-next:hover{border-color:var(--accent);color:var(--accent)}
+  .alert{padding:14px;border-radius:10px;font-size:14px;margin-top:12px;display:none}
+  .alert.show{display:block}
+  .alert-error{background:rgba(247,95,95,.12);border:1px solid rgba(247,95,95,.3);color:var(--red)}
+  .alert-info{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.3);color:var(--accent)}
+  .mode-tabs{display:flex;gap:8px;margin-bottom:20px}
+  .tab{flex:1;padding:10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer;text-align:center;font-size:13px;font-weight:500;transition:.2s}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:15px;font-family:inherit;outline:none}
+  input:focus{border-color:var(--accent)}
+  .history{margin-top:8px}
+  .history-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-top:6px;font-size:13px}
+  .history-room{font-weight:700;color:var(--accent2)}
+  nav{font-size:13px;color:var(--muted);margin-top:24px;text-align:center}
+  nav a{color:var(--accent);text-decoration:none}
+  .assigned-badge{background:rgba(247,201,72,.12);color:var(--yellow);border:1px solid rgba(247,201,72,.3);border-radius:6px;padding:3px 10px;font-size:12px;display:inline-block;margin-bottom:8px}
+</style>
+</head>
+<body>
+<h1>📱 掃碼指派教室</h1>
+<p class="sub">工作人員使用 — 術科考場外</p>
+
+<div class="card">
+  <div class="mode-tabs">
+    <div class="tab active" onclick="switchMode('camera')">📷 掃 QR Code</div>
+    <div class="tab" onclick="switchMode('manual')">⌨️ 手動輸入網址</div>
+  </div>
+
+  <div id="mode-camera">
+    <div id="reader"></div>
+    <button class="btn-scan" id="start-btn" onclick="startScan()">開始掃描</button>
+    <button class="btn-next" id="stop-btn" style="display:none" onclick="stopScan()">停止掃描</button>
+  </div>
+
+  <div id="mode-manual" style="display:none">
+    <label style="font-size:13px;color:var(--muted);display:block;margin-bottom:8px">貼上或輸入 QR 碼網址中的考生 ID</label>
+    <input type="text" id="manual-id" placeholder="考生 ID（scan.html?id=xxx 的 xxx 部分）">
+    <button class="btn-scan" onclick="processManual()" style="margin-top:12px">指派教室</button>
+  </div>
+
+  <div class="alert alert-error" id="err-msg"></div>
+  <div class="alert alert-info" id="info-msg"></div>
+</div>
+
+<div class="result-card card" id="result-card">
+  <div class="candidate-name" id="res-name">—</div>
+  <div class="candidate-num" id="res-num">號碼：—</div>
+  <div id="already-badge" class="assigned-badge" style="display:none">⚠️ 此考生已被指派過</div>
+  <div class="room-label">指派教室</div>
+  <div class="room-display" id="res-room">—</div>
+  <div class="teachers-line" id="res-teachers">—</div>
+  <p style="color:var(--muted);font-size:13px;margin-top:16px">以上兩位老師的評分頁面已自動出現此考生</p>
+  <button class="btn-next" onclick="resetScan()">繼續掃下一位</button>
+</div>
+
+<div class="card">
+  <h2>📋 最近指派記錄</h2>
+  <div class="history" id="history-list"><p style="color:var(--muted);font-size:13px">尚無記錄</p></div>
+</div>
+
+<nav>
+  <a href="index.html">管理後台</a> | 
+  <a href="results.html">成績總表</a>
+</nav>
+
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+let scanner = null;
+let historyLog = [];
+
+// Check if page loaded with ?id= param (scanned from QR)
+window.addEventListener('load', ()=>{
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if(id) processCandidate(id);
+});
+
+function switchMode(m){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===(m==='camera'?0:1)));
+  document.getElementById('mode-camera').style.display=m==='camera'?'block':'none';
+  document.getElementById('mode-manual').style.display=m==='manual'?'block':'none';
+  if(m!=='camera' && scanner) stopScan();
+}
+
+function startScan(){
+  document.getElementById('start-btn').style.display='none';
+  document.getElementById('stop-btn').style.display='block';
+  scanner = new Html5Qrcode('reader');
+  scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:250,height:250}}, url=>{
+    stopScan();
+    const id = new URL(url).searchParams.get('id');
+    if(id) processCandidate(id);
+    else showError('QR碼無效，請確認是評分系統的QR碼');
+  }, ()=>{});
+}
+
+function stopScan(){
+  if(scanner) scanner.stop().catch(()=>{});
+  document.getElementById('start-btn').style.display='block';
+  document.getElementById('stop-btn').style.display='none';
+}
+
+function processManual(){
+  const id=document.getElementById('manual-id').value.trim();
+  if(!id){showError('請輸入考生ID');return;}
+  processCandidate(id);
+}
+
+function processCandidate(id){
+  clearMessages();
+  db.ref('candidates/'+id).once('value').then(snap=>{
+    const c=snap.val();
+    if(!c){showError('找不到此考生，請確認QR碼正確');return;}
+
+    // Assign room (random if not yet assigned)
+    let room=c.assignedRoom;
+    let isNew=false;
+    if(!room){
+      room=PRACTICAL_ROOMS[Math.floor(Math.random()*PRACTICAL_ROOMS.length)];
+      isNew=true;
+    }
+
+    // Show result
+    document.getElementById('res-name').textContent=c.name;
+    document.getElementById('res-num').textContent='號碼：'+c.number;
+    document.getElementById('res-room').textContent=room;
+    document.getElementById('already-badge').style.display=isNew?'none':'inline-block';
+
+    // Teacher names for this room
+    const teachers=Object.values(TEACHERS).filter(t=>t.room===room&&t.type==='practical');
+    document.getElementById('res-teachers').textContent='👩‍🏫 負責老師：'+teachers.map(t=>t.name).join('、');
+
+    document.getElementById('result-card').classList.add('show');
+
+    // Save to Firebase if new assignment
+    if(isNew){
+      db.ref('candidates/'+id+'/assignedRoom').set(room);
+      db.ref('candidates/'+id+'/assignedAt').set(Date.now());
+    }
+
+    // Add to history
+    historyLog.unshift({name:c.name,number:c.number,room,time:new Date().toLocaleTimeString()});
+    if(historyLog.length>10) historyLog.pop();
+    renderHistory();
+  }).catch(()=>showError('連線失敗，請確認網路'));
+}
+
+function renderHistory(){
+  const el=document.getElementById('history-list');
+  if(!historyLog.length){el.innerHTML='<p style="color:var(--muted);font-size:13px">尚無記錄</p>';return;}
+  el.innerHTML=historyLog.map(h=>`
+    <div class="history-item">
+      <span><strong>${h.name}</strong> <span style="color:var(--muted)">${h.number}</span></span>
+      <span><span class="history-room">${h.room}</span> <span style="color:var(--muted);font-size:11px">${h.time}</span></span>
+    </div>`).join('');
+}
+
+function resetScan(){
+  document.getElementById('result-card').classList.remove('show');
+  document.getElementById('manual-id').value='';
+  history.replaceState(null,'',location.pathname);
+}
+
+function showError(msg){
+  const el=document.getElementById('err-msg');
+  el.textContent=msg;el.classList.add('show');
+}
+function clearMessages(){
+  document.getElementById('err-msg').classList.remove('show');
+  document.getElementById('info-msg').classList.remove('show');
+}
+</script>
+</body>
+</html>
