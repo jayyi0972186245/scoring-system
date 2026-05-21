@@ -247,8 +247,9 @@ function renderTable() {
       <td class="mono">${c.phoneLast3 || '—'}</td>
       <td style="font-size:11px;max-width:90px">${c.dept || '—'}</td>
       <td style="font-size:11px;max-width:100px">${c.school || '—'}</td>
-      <td>${c.checkedIn
-        ? `<span class="badge bdg">✓ 已報到</span>`
+      <td style="white-space:nowrap">${c.checkedIn
+        ? `<span class="badge bdg">✓ 已報到</span>
+           <button class="btn br bsm" style="margin-left:4px" onclick="cancelCheckin('${c.id}','${c.name}')">取消</button>`
         : `<button class="btn bg bsm" onclick="manualCheckin('${c.id}')">報到</button>`}</td>
       <td>${iv !== null ? `<span class="badge bdb">${iv.toFixed(1)}</span>` : '<span class="badge bdm">未評</span>'}</td>
       <td>${pr !== null ? `<span class="badge bdb">${pr.toFixed(1)}</span>` : '<span class="badge bdm">未評</span>'}</td>
@@ -262,6 +263,11 @@ function renderTable() {
 }
 
 function manualCheckin(id) { db.ref('candidates/' + id).update({ checkedIn: true, checkinTime: Date.now(), checkinMethod: 'manual' }); }
+function cancelCheckin(id, name) {
+  if (confirm('確定取消「' + name + '」的報到狀態？')) {
+    db.ref('candidates/' + id).update({ checkedIn: false, checkinTime: null, checkinMethod: null });
+  }
+}
 function delC(id) { if (confirm('確定刪除此考生？')) db.ref('candidates/' + id).remove(); }
 function clearAll() { if (confirm('確定清除所有考生？') && confirm('再次確認：清除全部資料？')) db.ref('candidates').remove(); }
 

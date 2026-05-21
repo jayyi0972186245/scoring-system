@@ -10,116 +10,267 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Noto Sans TC',sans-serif;background:#f0f4ff;color:#1e293b;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.card{background:#fff;border:1px solid #d0d9f0;border-radius:24px;padding:40px 32px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(59,110,245,.1)}
+.card{background:#fff;border:1px solid #d0d9f0;border-radius:24px;padding:36px 28px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(59,110,245,.1)}
 .logo{text-align:center;font-size:52px;margin-bottom:10px}
 h1{text-align:center;font-size:22px;font-weight:700;color:#3b6ef5;margin-bottom:4px}
-.sub{text-align:center;color:#64748b;font-size:14px;margin-bottom:32px}
-.lbl{display:block;font-size:13px;color:#64748b;margin-bottom:6px}
-input{width:100%;border:1.5px solid #d0d9f0;border-radius:10px;padding:14px 16px;color:#1e293b;font-size:18px;font-family:inherit;outline:none;text-align:center;background:#fff;margin-bottom:12px}
-input:focus{border-color:#3b6ef5}
-.btn-search{width:100%;background:#3b6ef5;color:#fff;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
-.btn-search:hover{filter:brightness(1.08)}
-.btn-checkin{width:100%;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:18px;font-size:18px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;margin-top:4px}
+.sub{text-align:center;color:#64748b;font-size:14px;margin-bottom:28px;line-height:1.6}
+.lbl{display:block;font-size:13px;color:#64748b;margin-bottom:6px;font-weight:500}
+.inp{width:100%;border:1.5px solid #d0d9f0;border-radius:10px;padding:14px 16px;color:#1e293b;font-size:20px;font-family:'Noto Sans TC',monospace;outline:none;text-align:center;background:#fff;letter-spacing:.15em}
+.inp:focus{border-color:#3b6ef5;box-shadow:0 0 0 3px rgba(59,110,245,.1)}
+.inp.small{font-size:16px;letter-spacing:.1em}
+.btn-main{width:100%;background:#3b6ef5;color:#fff;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;margin-top:10px}
+.btn-main:hover{filter:brightness(1.08)}
+.btn-main:active{transform:scale(.99)}
+.btn-checkin{width:100%;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:18px;font-size:18px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;margin-top:6px}
 .btn-checkin:hover{filter:brightness(1.08)}
-.btn-back{width:100%;background:transparent;border:1px solid #d0d9f0;border-radius:10px;padding:11px;font-size:14px;font-family:inherit;cursor:pointer;color:#64748b;margin-top:10px}
+.btn-back{width:100%;background:transparent;border:1.5px solid #d0d9f0;border-radius:10px;padding:11px;font-size:14px;font-family:inherit;cursor:pointer;color:#64748b;margin-top:10px;transition:.12s}
 .btn-back:hover{border-color:#3b6ef5;color:#3b6ef5}
-.err{color:#dc2626;font-size:13px;text-align:center;margin-bottom:10px;display:none}
-#step-confirm,#step-done{display:none}
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.err{color:#dc2626;font-size:13px;text-align:center;margin:8px 0;padding:10px;background:#fef2f2;border-radius:8px;display:none}
+
+/* Step 1 */
+#step-id{display:block}
+/* Step 1b: pick from duplicates */
+#step-pick{display:none}
+.pick-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
+.pick-item{border:2px solid #d0d9f0;border-radius:12px;padding:14px 18px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:space-between}
+.pick-item:hover{border-color:#3b6ef5;background:#f0f4ff}
+.pick-name{font-size:18px;font-weight:700}
+.pick-hint{font-size:12px;color:#64748b;margin-top:2px}
+/* Step 2: verify phone */
+#step-phone{display:none}
+.verify-name{font-size:20px;font-weight:700;color:#3b6ef5;text-align:center;margin-bottom:6px}
+.verify-sub{font-size:13px;color:#64748b;text-align:center;margin-bottom:20px}
+/* Step 3: confirm data */
+#step-confirm{display:none}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px}
 .info-item{background:#f8faff;border:1px solid #d0d9f0;border-radius:10px;padding:12px}
 .info-item .il{font-size:11px;color:#64748b;margin-bottom:3px}
-.info-item .iv{font-size:16px;font-weight:600}
+.info-item .iv{font-size:15px;font-weight:600}
 .info-item.full{grid-column:1/-1}
-.done-icon{font-size:72px;text-align:center;margin-bottom:16px;animation:pop .4s ease}
+.already-warn{background:#fef9ec;border:1px solid #fde68a;border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;color:#92400e;font-size:14px}
+/* Step 4: done */
+#step-done{display:none;text-align:center}
+.done-icon{font-size:72px;margin-bottom:16px;animation:pop .4s ease}
 @keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
-.done-name{font-size:24px;font-weight:700;color:#16a34a;text-align:center;margin-bottom:8px}
-.done-sub{color:#64748b;font-size:14px;text-align:center;margin-bottom:24px}
-.already-warn{background:#fef9ec;border:1px solid #fde68a;border-radius:10px;padding:14px;margin-bottom:16px;text-align:center;color:#92400e;font-size:14px}
+.done-name{font-size:24px;font-weight:700;color:#16a34a;margin-bottom:6px}
+.done-sub{color:#64748b;font-size:14px;margin-bottom:20px}
+/* Step indicator */
+.steps{display:flex;gap:6px;margin-bottom:20px;justify-content:center}
+.step-dot{width:8px;height:8px;border-radius:50%;background:#d0d9f0;transition:.2s}
+.step-dot.active{background:#3b6ef5;transform:scale(1.2)}
+.step-dot.done{background:#16a34a}
 </style>
 </head>
 <body>
 <div class="card">
   <div class="logo">📋</div>
   <h1>考生報到</h1>
-  <p class="sub">請輸入您的報名序號</p>
+  <p class="sub">請使用身分證末四碼登入</p>
 
-  <!-- 步驟一：輸入序號 -->
-  <div id="step-search">
-    <span class="lbl">報名序號</span>
-    <input type="text" id="reg-input" placeholder="請輸入報名序號" onkeydown="if(event.key==='Enter')doSearch()">
-    <div class="err" id="err-msg">找不到此序號，請確認後再試</div>
-    <button class="btn-search" onclick="doSearch()">查詢我的資料</button>
+  <div class="steps" id="step-dots">
+    <div class="step-dot active" id="dot0"></div>
+    <div class="step-dot" id="dot1"></div>
+    <div class="step-dot" id="dot2"></div>
+    <div class="step-dot" id="dot3"></div>
   </div>
 
-  <!-- 步驟二：確認資料 -->
+  <!-- 步驟一：輸入身分證末四碼 -->
+  <div id="step-id">
+    <span class="lbl">身分證末四碼</span>
+    <input class="inp" type="text" id="id-input" placeholder="例：1234" maxlength="4"
+      oninput="this.value=this.value.toUpperCase()"
+      onkeydown="if(event.key==='Enter')doSearchById()">
+    <div class="err" id="err-id">找不到此身分證末四碼，請確認後再試</div>
+    <button class="btn-main" onclick="doSearchById()">查詢</button>
+  </div>
+
+  <!-- 步驟一b：有重複末四碼，選擇考生 -->
+  <div id="step-pick">
+    <p style="font-size:14px;color:#64748b;margin-bottom:14px;text-align:center">
+      找到多位身分證末四碼相同的考生<br>請點選您的姓名
+    </p>
+    <div class="pick-list" id="pick-list"></div>
+    <button class="btn-back" onclick="goStep('id')">← 重新輸入</button>
+  </div>
+
+  <!-- 步驟二：手機末三碼驗證 -->
+  <div id="step-phone">
+    <div class="verify-name" id="v-name">—</div>
+    <div class="verify-sub">請輸入手機末三碼以驗證身份</div>
+    <span class="lbl">手機末三碼</span>
+    <input class="inp small" type="text" id="phone-input" placeholder="例：789" maxlength="3"
+      onkeydown="if(event.key==='Enter')doVerifyPhone()">
+    <div class="err" id="err-phone">手機末三碼不符，請再試一次</div>
+    <button class="btn-main" onclick="doVerifyPhone()">驗證</button>
+    <button class="btn-back" onclick="goStep('pick_or_id')">← 上一步</button>
+  </div>
+
+  <!-- 步驟三：確認資料 -->
   <div id="step-confirm">
     <div id="already-warn" class="already-warn" style="display:none">⚠️ 您已完成報到，無需重複操作</div>
     <div class="info-grid" id="info-grid"></div>
     <button class="btn-checkin" id="checkin-btn" onclick="doCheckin()">✅ 確認以上資料，完成報到</button>
-    <button class="btn-back" onclick="goBack()">← 重新查詢</button>
+    <button class="btn-back" onclick="goStep('id')">← 重新開始</button>
   </div>
 
-  <!-- 步驟三：完成 -->
+  <!-- 步驟四：完成 -->
   <div id="step-done">
     <div class="done-icon">🎉</div>
     <div class="done-name" id="done-name">報到完成！</div>
     <div class="done-sub">祝您考試順利 🍀</div>
-    <button class="btn-back" onclick="goBack()">返回</button>
+    <button class="btn-back" onclick="goStep('id')">返回首頁</button>
   </div>
 </div>
 
 <script>
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
-let current = null;
+let matchedCandidates = []; // 同末四碼的考生列表
+let selectedCandidate = null;
+let hadDuplicates = false;
 
-function doSearch() {
-  const q = document.getElementById('reg-input').value.trim();
-  if (!q) return;
-  document.getElementById('err-msg').style.display = 'none';
-  db.ref('candidates').orderByChild('regNo').equalTo(q).once('value').then(snap => {
+// ── 顯示步驟 ──────────────────────────────────────
+function goStep(step) {
+  ['id','pick','phone','confirm','done'].forEach(s => {
+    document.getElementById('step-' + s).style.display = 'none';
+  });
+  document.getElementById('step-' + step).style.display = 'block';
+  // dots
+  const stepOrder = ['id','phone','confirm','done'];
+  const idx = stepOrder.indexOf(step === 'pick' ? 'id' : step);
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('dot' + i);
+    dot.className = 'step-dot' + (i < idx ? ' done' : i === idx ? ' active' : '');
+  }
+  // clear errors
+  document.getElementById('err-id').style.display = 'none';
+  document.getElementById('err-phone').style.display = 'none';
+}
+
+// ── 步驟一：查詢身分證末四碼 ──────────────────────
+function doSearchById() {
+  const q = document.getElementById('id-input').value.trim().toUpperCase();
+  if (!q || q.length < 1) return;
+  document.getElementById('err-id').style.display = 'none';
+
+  db.ref('candidates').orderByChild('idLast4').equalTo(q).once('value').then(snap => {
     const data = snap.val();
-    if (!data) { document.getElementById('err-msg').style.display = 'block'; return; }
-    current = Object.values(data)[0];
-    showConfirm();
+    if (!data) {
+      document.getElementById('err-id').style.display = 'block';
+      return;
+    }
+    matchedCandidates = Object.values(data);
+
+    if (matchedCandidates.length === 1) {
+      // 只有一位 → 直接進手機驗證
+      selectedCandidate = matchedCandidates[0];
+      hadDuplicates = false;
+      showPhoneStep();
+    } else {
+      // 多位重複 → 顯示選擇列表
+      hadDuplicates = true;
+      showPickStep();
+    }
   });
 }
 
-function showConfirm() {
-  const c = current;
-  document.getElementById('step-search').style.display = 'none';
-  document.getElementById('step-confirm').style.display = 'block';
-  const alreadyWarn = document.getElementById('already-warn');
-  const checkinBtn = document.getElementById('checkin-btn');
-  alreadyWarn.style.display = c.checkedIn ? 'block' : 'none';
-  checkinBtn.style.display = c.checkedIn ? 'none' : 'block';
+// ── 步驟一b：顯示重複考生列表 ─────────────────────
+function showPickStep() {
+  const list = document.getElementById('pick-list');
+  list.innerHTML = matchedCandidates.map((c, i) =>
+    `<div class="pick-item" onclick="pickCandidate(${i})">
+      <div>
+        <div class="pick-name">${c.name}</div>
+        <div class="pick-hint">${c.school || ''} ${c.dept ? '／ ' + c.dept : ''}</div>
+      </div>
+      <span style="color:#3b6ef5;font-size:20px">›</span>
+    </div>`
+  ).join('');
+  goStep('pick');
+}
+
+function pickCandidate(idx) {
+  selectedCandidate = matchedCandidates[idx];
+  showPhoneStep();
+}
+
+// ── 步驟二：手機末三碼驗證 ────────────────────────
+function showPhoneStep() {
+  document.getElementById('v-name').textContent = selectedCandidate.name;
+  document.getElementById('phone-input').value = '';
+  goStep('phone');
+  setTimeout(() => document.getElementById('phone-input').focus(), 80);
+}
+
+function doVerifyPhone() {
+  const q = document.getElementById('phone-input').value.trim();
+  if (!q) return;
+  if (q === String(selectedCandidate.phoneLast3 || '').trim()) {
+    document.getElementById('err-phone').style.display = 'none';
+    showConfirmStep();
+  } else {
+    document.getElementById('err-phone').style.display = 'block';
+  }
+}
+
+// ── 步驟三：顯示確認資料 ──────────────────────────
+function showConfirmStep() {
+  const c = selectedCandidate;
+  document.getElementById('already-warn').style.display = c.checkedIn ? 'block' : 'none';
+  document.getElementById('checkin-btn').style.display = c.checkedIn ? 'none' : 'block';
   document.getElementById('info-grid').innerHTML = `
-    <div class="info-item full"><div class="il">姓名</div><div class="iv" style="font-size:22px">${c.name}</div></div>
-    <div class="info-item"><div class="il">報名序號</div><div class="iv">${c.regNo}</div></div>
-    <div class="info-item"><div class="il">身分證末四碼</div><div class="iv">${c.idLast4||'—'}</div></div>
-    <div class="info-item"><div class="il">手機末三碼</div><div class="iv">${c.phoneLast3||'—'}</div></div>
+    <div class="info-item full">
+      <div class="il">姓名</div>
+      <div class="iv" style="font-size:22px">${c.name}</div>
+    </div>
+    <div class="info-item">
+      <div class="il">報名序號</div>
+      <div class="iv">${c.regNo}</div>
+    </div>
+    <div class="info-item">
+      <div class="il">身分證末四碼</div>
+      <div class="iv">${c.idLast4 || '—'}</div>
+    </div>
+    <div class="info-item">
+      <div class="il">手機末三碼</div>
+      <div class="iv">${c.phoneLast3 || '—'}</div>
+    </div>
+    <div class="info-item full">
+      <div class="il">就讀學校</div>
+      <div class="iv">${c.school || '—'}</div>
+    </div>
+    <div class="info-item full">
+      <div class="il">畢業系別</div>
+      <div class="iv">${c.dept || '—'}</div>
+    </div>
   `;
+  goStep('confirm');
 }
 
+// ── 步驟四：完成報到 ──────────────────────────────
 function doCheckin() {
-  if (!current) return;
-  db.ref('candidates/' + current.id).update({
-    checkedIn: true, checkinTime: Date.now(), checkinMethod: 'self'
+  if (!selectedCandidate) return;
+  db.ref('candidates/' + selectedCandidate.id).update({
+    checkedIn: true,
+    checkinTime: Date.now(),
+    checkinMethod: 'self'
   }).then(() => {
-    document.getElementById('step-confirm').style.display = 'none';
-    document.getElementById('step-done').style.display = 'block';
-    document.getElementById('done-name').textContent = current.name + '，報到完成！';
+    document.getElementById('done-name').textContent = selectedCandidate.name + '，報到完成！';
+    goStep('done');
   });
 }
 
-function goBack() {
-  current = null;
-  document.getElementById('step-search').style.display = 'block';
-  document.getElementById('step-confirm').style.display = 'none';
-  document.getElementById('step-done').style.display = 'none';
-  document.getElementById('reg-input').value = '';
-  document.getElementById('err-msg').style.display = 'none';
-}
+// ── 「上一步」回到重複選擇或初始 ─────────────────
+document.querySelector('[onclick="goStep(\'pick_or_id\')"]')?.setAttribute('onclick',
+  hadDuplicates ? "goStep('pick')" : "goStep('id')"
+);
+// 動態處理「上一步」
+document.getElementById('step-phone').querySelector('.btn-back').onclick = function() {
+  if (hadDuplicates) goStep('pick'); else goStep('id');
+};
+
+// init
+goStep('id');
 </script>
 </body>
 </html>
