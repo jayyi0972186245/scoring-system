@@ -2,100 +2,189 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>掃碼指派教室</title>
+<title>工作人員掃碼</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="firebase-config.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0d1117;--s:#161b22;--s2:#21262d;--b:#30363d;--ac:#58a6ff;--ac2:#bc8cff;--g:#3fb950;--y:#d29922;--r:#f85149;--t:#e6edf3;--m:#8b949e}
+:root{--bg:#0d1117;--s:#161b22;--s2:#21262d;--b:#30363d;--ac:#58a6ff;--ac2:#bc8cff;--g:#3fb950;--y:#e3b341;--r:#f85149;--t:#e6edf3;--m:#8b949e}
 body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
 </style>
 <style id="nav-css"></style>
 <style>
-.wrap{max-width:460px;margin:0 auto;padding:20px 16px}
-.card{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:20px;margin-bottom:14px}
-.ch2{font-size:12px;color:var(--m);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px}
-.mode-tabs{display:flex;gap:8px;margin-bottom:16px}
-.mtab{flex:1;padding:10px;border-radius:8px;background:var(--s2);border:1px solid var(--b);color:var(--m);cursor:pointer;text-align:center;font-size:13px;font-weight:500;transition:.12s}
-.mtab.on{background:var(--ac);color:#000;border-color:var(--ac)}
-input{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:10px 14px;color:var(--t);font-size:14px;font-family:inherit;outline:none}
-input:focus{border-color:var(--ac)}
-.btn{cursor:pointer;font-family:inherit;font-weight:600;border:none;border-radius:10px;padding:11px;font-size:14px;transition:.12s;width:100%;margin-top:10px}
-.ba{background:var(--ac);color:#000}.ba:hover{filter:brightness(1.1)}
+/* Login */
+.lw{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.lc{background:var(--s);border:1px solid var(--b);border-radius:20px;padding:36px 28px;width:100%;max-width:380px;text-align:center}
+.lc .ico{font-size:48px;margin-bottom:12px}
+.lc h1{font-size:20px;font-weight:700;color:var(--ac);margin-bottom:6px}
+.lc p{color:var(--m);font-size:13px;margin-bottom:22px;line-height:1.6}
+.inp{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:11px 14px;color:var(--t);font-size:15px;font-family:inherit;outline:none;text-align:center;letter-spacing:.15em}
+.inp:focus{border-color:var(--ac)}
+.btn{cursor:pointer;font-family:inherit;font-weight:600;border:none;border-radius:10px;padding:12px;font-size:14px;transition:.12s;width:100%;margin-top:10px}
+.bp{background:var(--ac);color:#000}.bp:hover{filter:brightness(1.1)}
 .bo{background:transparent;border:1px solid var(--b);color:var(--m)}.bo:hover{border-color:var(--ac);color:var(--ac)}
+.err{color:var(--r);font-size:12px;margin-top:8px;display:none}
+
+/* App */
+.wrap{max-width:480px;margin:0 auto;padding:16px}
+.room-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(188,140,255,.12);border:1px solid rgba(188,140,255,.3);color:var(--ac2);border-radius:20px;padding:6px 16px;font-size:14px;font-weight:700;margin-bottom:4px}
+.room-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--g);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.staff-name{font-size:12px;color:var(--m);margin-bottom:16px}
+
+.card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:18px;margin-bottom:12px}
+.ch2{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+
+/* Mode tabs */
+.mtabs{display:flex;gap:6px;margin-bottom:14px}
+.mtab{flex:1;padding:9px;border-radius:8px;background:var(--s2);border:1px solid var(--b);color:var(--m);cursor:pointer;text-align:center;font-size:12px;font-weight:500;transition:.12s}
+.mtab.on{background:var(--ac);color:#000;border-color:var(--ac)}
+
 #reader{border-radius:10px;overflow:hidden}
+.scan-btn{width:100%;margin-top:10px;cursor:pointer;font-family:inherit;font-weight:700;border:none;border-radius:10px;padding:12px;font-size:14px;background:var(--ac);color:#000;transition:.12s}
+.scan-btn:hover{filter:brightness(1.1)}
+.stop-btn{width:100%;margin-top:6px;cursor:pointer;font-family:inherit;font-weight:500;border:1px solid var(--b);border-radius:10px;padding:9px;font-size:13px;background:transparent;color:var(--m)}
+
+.manual-row{display:flex;gap:8px;margin-top:10px}
+.manual-inp{flex:1;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:9px 12px;color:var(--t);font-size:13px;font-family:inherit;outline:none}
+.manual-inp:focus{border-color:var(--ac)}
+.manual-btn{background:var(--ac);color:#000;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+
+/* Result */
 .result{background:var(--s2);border:2px solid var(--g);border-radius:14px;padding:20px;text-align:center;display:none}
 .result.show{display:block}
 .r-name{font-size:24px;font-weight:700;margin-bottom:4px}
-.r-num{color:var(--m);font-size:13px;margin-bottom:14px}
-.r-room{font-size:42px;font-weight:700;color:var(--g);font-family:monospace}
-.r-teachers{font-size:13px;color:var(--ac2);margin-top:8px}
-.r-info{font-size:12px;color:var(--m);margin-top:6px}
-.already-b{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);color:var(--y);border-radius:6px;padding:2px 10px;font-size:11px;display:inline-block;margin-bottom:6px}
-.hi{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--s2);border-radius:8px;margin-top:6px;font-size:13px}
-.hr{font-weight:700;color:var(--ac2)}
+.r-no{color:var(--m);font-size:13px;margin-bottom:12px}
+.r-room-box{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.25);border-radius:10px;padding:12px;margin-bottom:10px}
+.r-room{font-size:38px;font-weight:700;color:var(--g);font-family:monospace}
+.r-teachers{font-size:13px;color:var(--ac2);margin-top:4px}
+.r-info{font-size:12px;color:var(--m);margin-top:6px;line-height:1.5}
+.r-already{background:rgba(227,179,65,.08);border:1px solid rgba(227,179,65,.25);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--y);display:inline-block;margin-bottom:8px}
+
+/* History */
+.hi{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--s2);border-radius:8px;margin-top:6px;font-size:12px}
+.hi-room{font-weight:700;color:var(--ac2);font-size:11px}
 </style>
 </head>
 <body>
-<div id="NAV"></div>
-<div class="wrap">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-    <div>
-      <h2 style="font-size:18px;font-weight:700;color:var(--ac)">📱 掃碼指派教室</h2>
-      <p style="font-size:12px;color:var(--m);margin-top:2px">術科考場外工作人員使用</p>
-    </div>
+
+<!-- Login -->
+<div class="lw" id="LP">
+  <div class="lc">
+    <div class="ico">📱</div>
+    <h1>工作人員掃碼</h1>
+    <p>術科考場門口專用<br>請輸入您的工作人員密碼</p>
+    <input class="inp" type="password" id="pw" placeholder="輸入工作人員密碼" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="err" id="err-login">密碼錯誤，請向管理員確認</div>
+    <button class="btn bp" onclick="doLogin()">登入</button>
+    <a href="index.html" style="display:block;margin-top:14px;font-size:12px;color:var(--m);text-decoration:none">← 返回管理後台</a>
   </div>
+</div>
 
-  <div class="card">
-    <div class="mode-tabs">
-      <div class="mtab on" onclick="switchMode('camera',this)">📷 掃 QR Code</div>
-      <div class="mtab" onclick="switchMode('manual',this)">⌨️ 手動輸入</div>
+<!-- App -->
+<div id="APP" style="display:none">
+  <div id="NAV"></div>
+  <div class="wrap">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div>
+        <div class="room-badge"><span class="dot"></span><span id="room-label">CM216</span></div>
+        <div class="staff-name" id="staff-name-label">—</div>
+      </div>
+      <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit">登出</button>
     </div>
 
-    <div id="mode-camera">
-      <div id="reader"></div>
-      <button class="btn ba" id="start-btn" onclick="startScan()">開始掃描</button>
-      <button class="btn bo" id="stop-btn" style="display:none" onclick="stopScan()">停止掃描</button>
+    <!-- Scanner -->
+    <div class="card">
+      <div class="ch2">📷 掃描考生 QR Code</div>
+      <div class="mtabs">
+        <div class="mtab on" onclick="switchMode('camera',this)">📷 鏡頭掃描</div>
+        <div class="mtab" onclick="switchMode('manual',this)">⌨️ 手動輸入</div>
+      </div>
+
+      <div id="mode-camera">
+        <div id="reader"></div>
+        <button class="scan-btn" id="start-btn" onclick="startScan()">▶ 開始掃描</button>
+        <button class="stop-btn" id="stop-btn" style="display:none" onclick="stopScan()">■ 停止掃描</button>
+      </div>
+
+      <div id="mode-manual" style="display:none">
+        <p style="font-size:12px;color:var(--m);margin-bottom:8px">貼上 scan.html?id= 後面的考生ID</p>
+        <div class="manual-row">
+          <input class="manual-inp" type="text" id="manual-id" placeholder="考生 ID">
+          <button class="manual-btn" onclick="processManual()">指派</button>
+        </div>
+      </div>
     </div>
 
-    <div id="mode-manual" style="display:none">
-      <label style="font-size:12px;color:var(--m);display:block;margin-bottom:6px">貼上 scan.html?id= 後面的考生ID</label>
-      <input type="text" id="manual-id" placeholder="考生 ID">
-      <button class="btn ba" onclick="processManual()">指派教室</button>
+    <!-- Result -->
+    <div class="result" id="result">
+      <div id="r-already" class="r-already" style="display:none">⚠️ 此考生已指派過教室</div>
+      <div class="r-name" id="r-name">—</div>
+      <div class="r-no" id="r-no">—</div>
+      <div class="r-room-box">
+        <div style="font-size:12px;color:var(--m);margin-bottom:4px">已指派至教室</div>
+        <div class="r-room" id="r-room">—</div>
+        <div class="r-teachers" id="r-teachers">—</div>
+      </div>
+      <div class="r-info" id="r-info">—</div>
+      <p style="font-size:12px;color:var(--g);margin-top:10px">✅ 老師評分頁面已自動出現此考生</p>
+      <button onclick="resetResult()" style="width:100%;margin-top:12px;background:var(--s);border:1px solid var(--b);color:var(--t);border-radius:10px;padding:10px;font-size:13px;cursor:pointer;font-family:inherit">繼續掃下一位 →</button>
     </div>
-  </div>
 
-  <div class="result card" id="result">
-    <div id="already-b" class="already-b" style="display:none">⚠️ 此考生已指派過教室</div>
-    <div class="r-name" id="r-name">—</div>
-    <div class="r-num" id="r-num">—</div>
-    <div style="font-size:13px;color:var(--m);margin-bottom:4px">隨機指派至</div>
-    <div class="r-room" id="r-room">—</div>
-    <div class="r-teachers" id="r-teachers">—</div>
-    <div class="r-info" id="r-info">—</div>
-    <button class="btn bo" style="margin-top:14px" onclick="resetResult()">繼續掃下一位</button>
-  </div>
-
-  <div class="card">
-    <div class="ch2">📋 最近指派記錄</div>
-    <div id="hist"><p style="color:var(--m);font-size:13px">尚無記錄</p></div>
+    <!-- History -->
+    <div class="card">
+      <div class="ch2">📋 本次指派記錄</div>
+      <div id="hist"><p style="color:var(--m);font-size:12px;text-align:center;padding:12px">尚無記錄</p></div>
+    </div>
   </div>
 </div>
 
 <script>
 document.getElementById('nav-css').textContent = NAV_CSS;
-document.getElementById('NAV').innerHTML = buildNav('scan');
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
-let scanner = null, hist = [];
+let myRoom = '', myName = '', scanner = null, hist = [];
 
+// Handle QR param on load
 window.addEventListener('load', () => {
   const id = new URLSearchParams(location.search).get('id');
-  if (id) processCandidate(id);
+  if (id && myRoom) processCandidate(id);
 });
+
+function doLogin() {
+  const pw = document.getElementById('pw').value.trim();
+  document.getElementById('err-login').style.display = 'none';
+  // Check admin
+  if (TEACHERS[pw]?.type === 'admin') {
+    alert('管理員密碼無法在此頁面使用，請以工作人員密碼登入');
+    return;
+  }
+  // Check staff from Firebase
+  db.ref('staff').orderByChild('password').equalTo(pw).once('value').then(snap => {
+    const data = snap.val();
+    if (!data) { document.getElementById('err-login').style.display = 'block'; return; }
+    const staff = Object.values(data)[0];
+    myRoom = staff.room;
+    myName = staff.name;
+    document.getElementById('LP').style.display = 'none';
+    document.getElementById('APP').style.display = 'block';
+    document.getElementById('NAV').innerHTML = buildNav('scan', myName, 'doLogout()');
+    document.getElementById('room-label').textContent = myRoom;
+    document.getElementById('staff-name-label').textContent = myName + ' 工作人員';
+  }).catch(() => { document.getElementById('err-login').style.display = 'block'; });
+}
+
+function doLogout() {
+  document.getElementById('APP').style.display = 'none';
+  document.getElementById('LP').style.display = 'flex';
+  document.getElementById('pw').value = '';
+  myRoom = ''; myName = '';
+  if (scanner) stopScan();
+  hist = [];
+}
 
 function switchMode(m, el) {
   document.querySelectorAll('.mtab').forEach(t => t.classList.toggle('on', t === el));
@@ -108,41 +197,65 @@ function startScan() {
   document.getElementById('start-btn').style.display = 'none';
   document.getElementById('stop-btn').style.display = 'block';
   scanner = new Html5Qrcode('reader');
-  scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 240, height: 240 } }, url => {
+  scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 230, height: 230 } }, url => {
     stopScan();
-    try { const id = new URL(url).searchParams.get('id'); if (id) processCandidate(id); else alert('QR碼無效'); }
-    catch (e) { alert('QR碼格式錯誤'); }
+    try {
+      const id = new URL(url).searchParams.get('id');
+      if (id) processCandidate(id);
+      else alert('QR碼無效，請確認是考生專屬QR碼');
+    } catch (e) { alert('QR碼格式錯誤'); }
   }, () => { });
 }
+
 function stopScan() {
   if (scanner) scanner.stop().catch(() => { });
+  scanner = null;
   document.getElementById('start-btn').style.display = 'block';
   document.getElementById('stop-btn').style.display = 'none';
 }
+
 function processManual() {
   const id = document.getElementById('manual-id').value.trim();
   if (id) processCandidate(id);
 }
 
 function processCandidate(id) {
+  if (!myRoom) { alert('請先登入'); return; }
   db.ref('candidates/' + id).once('value').then(snap => {
     const c = snap.val();
-    if (!c) { alert('找不到此考生'); return; }
+    if (!c) { alert('找不到此考生，請確認QR碼正確'); return; }
+
     const isNew = !c.assignedRoom;
-    const room = isNew ? PRACTICAL_ROOMS[Math.floor(Math.random() * PRACTICAL_ROOMS.length)] : c.assignedRoom;
+    // Always assign to MY room (staff is locked to their room)
     if (isNew) {
-      db.ref('candidates/' + id).update({ assignedRoom: room, assignedAt: Date.now() });
-      db.ref('practicalQueue/' + room).push({ candidateId: id, name: c.name, school: c.school || '', dept: c.dept || '', regNo: c.regNo, assignedAt: Date.now() });
+      db.ref('candidates/' + id).update({ assignedRoom: myRoom, assignedAt: Date.now() });
     }
-    const teachers = Object.values(TEACHERS).filter(t => t.room === room && t.type === 'practical');
+
+    // Push to practical queue for my room — each scan = new queue entry
+    // This signals the teachers that this candidate is about to enter
+    const qEntry = {
+      candidateId: id,
+      name: c.name,
+      school: c.school || '',
+      dept: c.dept || '',
+      regNo: c.regNo,
+      assignedAt: Date.now(),
+      scannedBy: myName
+    };
+    db.ref('practicalQueue/' + myRoom).push(qEntry);
+
+    // Show result
+    const teachers = Object.values(TEACHERS).filter(t => t.room === myRoom && t.type === 'practical');
     document.getElementById('r-name').textContent = c.name;
-    document.getElementById('r-num').textContent = '序號：' + c.regNo;
-    document.getElementById('r-room').textContent = room;
+    document.getElementById('r-no').textContent = '序號：' + c.regNo;
+    document.getElementById('r-room').textContent = myRoom;
     document.getElementById('r-teachers').textContent = '👩‍🏫 ' + teachers.map(t => t.name).join('、');
-    document.getElementById('r-info').textContent = (c.school || '') + (c.dept ? ' ／ ' + c.dept : '');
-    document.getElementById('already-b').style.display = isNew ? 'none' : 'inline-block';
+    document.getElementById('r-info').textContent =
+      (c.school ? '🏫 ' + c.school : '') + (c.dept ? '\n📚 ' + c.dept : '');
+    document.getElementById('r-already').style.display = isNew ? 'none' : 'inline-block';
     document.getElementById('result').classList.add('show');
-    hist.unshift({ name: c.name, regNo: c.regNo, room, time: new Date().toLocaleTimeString() });
+
+    hist.unshift({ name: c.name, regNo: c.regNo, time: new Date().toLocaleTimeString() });
     if (hist.length > 8) hist.pop();
     renderHist();
     document.getElementById('manual-id').value = '';
@@ -150,13 +263,16 @@ function processCandidate(id) {
   }).catch(() => alert('連線失敗，請確認網路'));
 }
 
-function resetResult() { document.getElementById('result').classList.remove('show'); }
+function resetResult() {
+  document.getElementById('result').classList.remove('show');
+}
+
 function renderHist() {
   const el = document.getElementById('hist');
-  if (!hist.length) { el.innerHTML = '<p style="color:var(--m);font-size:13px">尚無記錄</p>'; return; }
+  if (!hist.length) { el.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:12px">尚無記錄</p>'; return; }
   el.innerHTML = hist.map(h => `<div class="hi">
     <span><strong>${h.name}</strong> <span style="color:var(--m)">${h.regNo}</span></span>
-    <span><span class="hr">${h.room}</span> <span style="color:var(--m);font-size:11px">${h.time}</span></span>
+    <span><span class="hi-room">${myRoom}</span> <span style="color:var(--m);font-size:10px">${h.time}</span></span>
   </div>`).join('');
 }
 </script>

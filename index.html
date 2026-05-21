@@ -37,6 +37,20 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 .st .n{font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--ac)}
 .st .l{font-size:11px;color:var(--m);margin-top:2px}
 .grid2{display:grid;grid-template-columns:310px 1fr;gap:16px;align-items:start}
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--b);margin-bottom:20px}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;color:var(--m);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.12s;white-space:nowrap}
+.tab:hover{color:var(--t)}
+.tab.on{color:var(--ac);border-color:var(--ac)}
+.pane{display:none}.pane.on{display:block}
+/* Staff */
+.staff-grid{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
+.sel{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:9px 12px;color:var(--t);font-size:13px;outline:none;font-family:inherit}
+.sel:focus{border-color:var(--ac)}
+.room-tag{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600;display:inline-block}
+.rt-216{background:rgba(88,166,255,.12);color:var(--ac)}
+.rt-214{background:rgba(188,140,255,.12);color:var(--ac2)}
+.rt-212{background:rgba(63,185,80,.12);color:var(--g)}
 .card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:20px;margin-bottom:14px}
 .ch2{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-weight:500}
 /* Inputs */
@@ -108,6 +122,15 @@ tr:hover td{background:rgba(88,166,255,.025)}
       <div class="st"><div class="n" id="s4">0</div><div class="l">全部完成</div></div>
     </div>
 
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab on" onclick="showTab('t-main',this)">👥 考生名單</div>
+      <div class="tab" onclick="showTab('t-staff',this)">👷 工作人員管理</div>
+      <div class="tab" onclick="showTab('t-tools',this)">🛠️ 工具</div>
+    </div>
+
+    <!-- Tab: 考生名單 -->
+    <div class="pane on" id="t-main">
     <div class="grid2">
       <!-- Left panel -->
       <div>
@@ -168,6 +191,63 @@ tr:hover td{background:rgba(88,166,255,.025)}
         </div>
       </div>
     </div>
+    </div><!-- /t-main -->
+
+    <!-- Tab: 工作人員 -->
+    <div class="pane" id="t-staff">
+      <div class="staff-grid">
+        <!-- 新增工作人員 -->
+        <div class="card">
+          <div class="ch2">➕ 新增工作人員</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">
+            工作人員在術科教室門口使用，掃描考生QR碼後自動推送到該教室的評分老師畫面
+          </p>
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">姓名</label>
+          <input class="inp" id="st-name" placeholder="工作人員姓名" style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">登入密碼</label>
+          <input class="inp" id="st-pw" placeholder="自訂4-8位密碼" style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">負責教室</label>
+          <select class="sel" id="st-room" style="margin-bottom:14px">
+            <option value="CM216">CM216</option>
+            <option value="CM214">CM214</option>
+            <option value="CM212">CM212</option>
+          </select>
+          <button class="btn bg" style="width:100%" onclick="addStaff()">新增工作人員</button>
+          <div id="staff-msg" style="margin-top:8px;font-size:12px;display:none"></div>
+        </div>
+
+        <!-- 工作人員名單 -->
+        <div class="card">
+          <div class="ch2">👷 目前工作人員名單</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">
+            工作人員至 <strong style="color:var(--ac)">scan.html</strong> 頁面，選擇教室後輸入密碼登入
+          </p>
+          <div id="staff-list">
+            <p style="color:var(--m);font-size:13px;text-align:center;padding:24px">尚未新增工作人員</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /t-staff -->
+
+    <!-- Tab: 工具 -->
+    <div class="pane" id="t-tools">
+      <div style="max-width:480px">
+        <div class="card">
+          <div class="ch2">🖨️ 列印工具</div>
+          <button class="btn bo" style="width:100%;margin-bottom:10px" onclick="printAllQR()">列印所有考生 QR Code</button>
+          <button class="btn bo" style="width:100%" onclick="printCheckinQR()">列印報到用 QR Code</button>
+        </div>
+        <div class="card">
+          <div class="ch2">📤 匯出</div>
+          <button class="btn bo" style="width:100%" onclick="exportCSV()">匯出成績 CSV</button>
+        </div>
+        <div class="card">
+          <div class="ch2">⚠️ 危險操作</div>
+          <button class="btn br" style="width:100%;margin-bottom:8px" onclick="clearQueue()">清除術科佇列（不刪考生）</button>
+          <button class="btn br" style="width:100%" onclick="clearAll()">清除所有考生資料</button>
+        </div>
+      </div>
+    </div><!-- /t-tools -->
   </div>
 </div>
 
@@ -185,7 +265,14 @@ tr:hover td{background:rgba(88,166,255,.025)}
 document.getElementById('nav-css').textContent = NAV_CSS;
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
-let candidates = {}, filt = 'all';
+let candidates = {}, staffList = {}, filt = 'all';
+
+function showTab(id, el) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  el.classList.add('on');
+}
 
 function login() {
   const pw = document.getElementById('pw').value.trim();
@@ -195,6 +282,7 @@ function login() {
     document.getElementById('NAV').innerHTML = buildNav('index', '管理員', 'logout()');
     initCheckinQR();
     db.ref('candidates').on('value', s => { candidates = s.val() || {}; updateStats(); renderTable(); });
+    db.ref('staff').on('value', s => { staffList = s.val() || {}; renderStaff(); });
     document.getElementById('er').style.display = 'none';
   } else { document.getElementById('er').style.display = 'block'; }
 }
@@ -331,6 +419,56 @@ function showQR(id) {
   const url = location.origin + location.pathname.replace('index.html', '') + 'scan.html?id=' + id;
   new QRCode(document.getElementById('qr-canvas'), { text: url, width: 200, height: 200, colorDark: '#000', colorLight: '#fff' });
   document.getElementById('qrModal').classList.add('show');
+}
+
+// Staff management
+function addStaff() {
+  const name = document.getElementById('st-name').value.trim();
+  const pw = document.getElementById('st-pw').value.trim();
+  const room = document.getElementById('st-room').value;
+  const msg = document.getElementById('staff-msg');
+  if (!name || !pw) { msg.style.display='block'; msg.innerHTML='<span style="color:var(--r)">請填寫姓名和密碼</span>'; return; }
+  // Check duplicate password
+  const existing = Object.values(staffList).find(s => s.password === pw);
+  if (existing) { msg.style.display='block'; msg.innerHTML='<span style="color:var(--r)">此密碼已被使用，請換一個</span>'; return; }
+  const id = 'st_' + Date.now();
+  db.ref('staff/' + id).set({ id, name, password: pw, room, createdAt: Date.now() }).then(() => {
+    document.getElementById('st-name').value = '';
+    document.getElementById('st-pw').value = '';
+    msg.style.display = 'block';
+    msg.innerHTML = '<span style="color:var(--g)">✅ 工作人員已新增</span>';
+    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+  });
+}
+
+function renderStaff() {
+  const el = document.getElementById('staff-list');
+  const list = Object.values(staffList).sort((a,b) => a.room.localeCompare(b.room));
+  if (!list.length) { el.innerHTML = '<p style="color:var(--m);font-size:13px;text-align:center;padding:24px">尚未新增工作人員</p>'; return; }
+  const roomCls = { CM216: 'rt-216', CM214: 'rt-214', CM212: 'rt-212' };
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">姓名</th>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">密碼</th>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">教室</th>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b)"></th>
+    </tr></thead>
+    <tbody>${list.map(s => `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><strong>${s.name}</strong></td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4);font-family:'JetBrains Mono',monospace;color:var(--y)">${s.password}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><span class="room-tag ${roomCls[s.room]||''}">${s.room}</span></td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><button class="btn br bsm" onclick="delStaff('${s.id}','${s.name}')">刪除</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function delStaff(id, name) {
+  if (confirm('確定刪除工作人員「' + name + '」？')) db.ref('staff/' + id).remove();
+}
+
+function clearQueue() {
+  if (confirm('確定清除所有術科候考佇列？（考生資料和評分不會刪除）'))
+    db.ref('practicalQueue').remove();
 }
 
 function exportCSV() {

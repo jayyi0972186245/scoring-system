@@ -7,80 +7,125 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap');
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0d1117;--s:#161b22;--s2:#21262d;--b:#30363d;--ac:#58a6ff;--ac2:#bc8cff;--g:#3fb950;--y:#d29922;--r:#f85149;--t:#e6edf3;--m:#8b949e}
+:root{--bg:#0d1117;--s:#161b22;--s2:#21262d;--b:#30363d;--ac:#58a6ff;--ac2:#bc8cff;--g:#3fb950;--y:#e3b341;--r:#f85149;--t:#e6edf3;--m:#8b949e}
 body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
 </style>
 <style id="nav-css"></style>
 <style>
-.lw{display:flex;align-items:center;justify-content:center;min-height:100vh}
-.lc{background:var(--s);border:1px solid var(--b);border-radius:24px;padding:40px;width:380px;text-align:center}
-.lc .ico{font-size:52px;margin-bottom:16px}
+/* ── Login ── */
+.lw{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.lc{background:var(--s);border:1px solid var(--b);border-radius:24px;padding:40px;width:100%;max-width:380px;text-align:center}
+.lc .ico{font-size:52px;margin-bottom:14px}
 .lc h1{font-size:20px;font-weight:700;color:var(--ac);margin-bottom:6px}
 .lc p{color:var(--m);font-size:13px;margin-bottom:24px;line-height:1.6}
-.lc a{color:var(--ac);font-size:12px;display:block;margin-top:14px}
-input.pw{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:12px 16px;color:var(--t);font-size:18px;font-family:'JetBrains Mono',monospace;outline:none;text-align:center;letter-spacing:.3em}
-input.pw:focus{border-color:var(--ac)}
-.btn{cursor:pointer;font-family:inherit;font-weight:600;border:none;border-radius:10px;padding:12px;font-size:15px;transition:.2s;width:100%;margin-top:12px}
-.bp{background:var(--ac);color:#000}.bp:hover{filter:brightness(1.1)}
-.bg{background:var(--g);color:#fff;font-size:17px;padding:16px}.bg:hover{filter:brightness(1.08)}
-.bo{background:transparent;color:var(--m);border:1px solid var(--b);margin-top:8px;font-size:13px;padding:9px}.bo:hover{border-color:var(--ac);color:var(--ac)}
-/* App */
-.app-layout{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 90px)}
-.sidebar{background:var(--s);border-right:1px solid var(--b);padding:14px;overflow-y:auto}
-.sidebar h3{font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-weight:500}
-.main-panel{padding:20px;overflow-y:auto}
-.hdr{background:var(--s);border-bottom:1px solid var(--b);padding:10px 18px;display:flex;align-items:center;justify-content:space-between}
-.av{width:32px;height:32px;border-radius:50%;background:var(--ac2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
-/* Queue */
-.qi{border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:.12s;border:2px solid transparent}
+.lc a{color:var(--ac);font-size:12px;display:block;margin-top:14px;text-decoration:none}
+.pw-inp{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:12px 16px;color:var(--t);font-size:18px;font-family:'JetBrains Mono',monospace;outline:none;text-align:center;letter-spacing:.3em}
+.pw-inp:focus{border-color:var(--ac)}
+.btn-login{width:100%;background:var(--ac);color:#000;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;margin-top:12px;font-family:inherit;transition:.12s}
+.btn-login:hover{filter:brightness(1.1)}
+
+/* ── Layout ── */
+.app-wrap{display:grid;grid-template-columns:260px 1fr;height:calc(100vh - 44px)}
+.sidebar{background:var(--s);border-right:1px solid var(--b);display:flex;flex-direction:column;overflow:hidden}
+.sb-header{padding:14px 14px 10px;border-bottom:1px solid var(--b);flex-shrink:0}
+.sb-title{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.1em;font-weight:500;margin-bottom:2px}
+.sb-room{font-size:14px;font-weight:700;color:var(--ac2)}
+.sb-scroll{flex:1;overflow-y:auto;padding:10px}
+.sb-scroll::-webkit-scrollbar{width:4px}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px}
+
+/* ── Queue items ── */
+.qi{border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;border:2px solid transparent;transition:.12s}
 .qi:hover{border-color:var(--b)}
-.qi.cur{background:rgba(63,185,80,.07);border-color:rgba(63,185,80,.35)}
-.qi.wait{background:var(--s2);border-color:transparent}
-.qi.done{opacity:.55;border-color:transparent}
-.qi-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:2px}
-.qi-name{font-size:13px;font-weight:600}
-.qi-sub{font-size:11px;color:var(--m);margin-top:1px}
-.qi-score{font-size:11px;color:var(--g);font-family:'JetBrains Mono',monospace;margin-top:2px}
-/* Score cards */
-.sc-card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:22px;margin-bottom:14px}
-.sc-card.active{border-color:var(--g);animation:glow 3s ease-in-out infinite}
-@keyframes glow{0%,100%{border-color:rgba(63,185,80,.3)}50%{border-color:rgba(63,185,80,.7)}}
-.sc-lbl{font-size:11px;color:var(--g);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
-.sc-name{font-size:26px;font-weight:700;margin-bottom:2px}
-.sc-info{font-size:13px;color:var(--m);margin-bottom:4px}
-.sc-rno{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--m);margin-bottom:16px}
-.score-section{background:var(--s2);border-radius:10px;padding:14px}
+.qi.cur{background:rgba(63,185,80,.07);border-color:rgba(63,185,80,.4)}
+.qi.wait{background:var(--s2)}
+.qi.done{background:transparent;border-color:rgba(48,54,61,.5);opacity:.65}
+.qi-badge{font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;margin-bottom:3px;display:block}
+.qi.cur .qi-badge{color:var(--g)}
+.qi.wait .qi-badge{color:var(--y)}
+.qi.done .qi-badge{color:var(--m)}
+.qi-name{font-size:13px;font-weight:700;margin-bottom:2px}
+.qi-school{font-size:11px;color:var(--m);line-height:1.4}
+.qi-score{font-size:11px;color:var(--g);font-family:'JetBrains Mono',monospace;margin-top:3px}
+.qi-new{position:relative}
+.qi-new::after{content:'NEW';position:absolute;top:6px;right:8px;font-size:9px;background:var(--r);color:#fff;padding:1px 5px;border-radius:4px;font-weight:700}
+
+/* ── Main panel ── */
+.main{padding:20px;overflow-y:auto}
+
+/* ── Top bar ── */
+.topbar{background:var(--s);border-bottom:1px solid var(--b);padding:10px 16px;display:flex;align-items:center;justify-content:space-between}
+.av{width:32px;height:32px;border-radius:50%;background:var(--ac2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--g);animation:ld 2s infinite;display:inline-block}
+@keyframes ld{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── Score cards ── */
+.sc{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:22px;margin-bottom:16px}
+.sc.active-glow{border-color:var(--g);animation:glow 3s ease-in-out infinite}
+@keyframes glow{0%,100%{border-color:rgba(63,185,80,.3)}50%{border-color:rgba(63,185,80,.75)}}
+
+.cand-lbl{font-size:10px;color:var(--g);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;font-weight:600}
+.cand-name{font-size:28px;font-weight:700;margin-bottom:4px}
+.cand-no{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--m);margin-bottom:14px}
+
+/* Info chips */
+.info-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.chip{background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:8px 12px;font-size:13px;line-height:1.4}
+.chip .cl{font-size:10px;color:var(--m);display:block;margin-bottom:2px}
+.chip .cv{font-weight:600}
+
+/* Score input area */
+.score-area{background:var(--s2);border-radius:12px;padding:16px;margin-bottom:14px}
+.score-area p{font-size:13px;color:var(--m);margin-bottom:10px}
 .score-row{display:flex;align-items:center;gap:12px}
-.snum{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;width:90px;text-align:center;background:var(--s);border:2px solid var(--b);border-radius:10px;padding:10px;color:var(--t);outline:none}
+.snum{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;width:100px;text-align:center;background:var(--s);border:2px solid var(--b);border-radius:10px;padding:10px;color:var(--t);outline:none}
 .snum:focus{border-color:var(--ac)}
-.already-box{background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.2);border-radius:10px;padding:12px 16px;font-size:14px;color:var(--g);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.wait-card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:48px;text-align:center}
-.wait-card .ico{font-size:40px;margin-bottom:12px}
+.snum-hint{font-size:13px;color:var(--m)}
+
+.btn-submit{width:100%;background:var(--g);color:#fff;border:none;border-radius:10px;padding:15px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit;transition:.12s}
+.btn-submit:hover{filter:brightness(1.08)}
+.btn-edit{width:100%;background:transparent;border:1px solid var(--b);color:var(--m);border-radius:10px;padding:9px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:8px;transition:.12s}
+.btn-edit:hover{border-color:var(--ac);color:var(--ac)}
+
+/* Already scored */
+.scored-box{background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.2);border-radius:10px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.scored-lbl{font-size:13px;color:var(--m)}
+.scored-val{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;color:var(--g)}
+
+/* Waiting */
+.wait-card{background:var(--s);border:1px solid var(--b);border-radius:16px;padding:56px 24px;text-align:center}
+.wait-card .ico{font-size:44px;margin-bottom:14px}
 .wait-card p{color:var(--m);font-size:14px;line-height:1.7}
-.dot{width:6px;height:6px;border-radius:50%;background:var(--g);display:inline-block;animation:dot 2s infinite}
-@keyframes dot{0%,100%{opacity:1}50%{opacity:.3}}
-@media(max-width:680px){.app-layout{grid-template-columns:1fr}.sidebar{max-height:180px;border-right:none;border-bottom:1px solid var(--b)}}
+
+@media(max-width:680px){
+  .app-wrap{grid-template-columns:1fr;height:auto}
+  .sidebar{max-height:200px;border-right:none;border-bottom:1px solid var(--b)}
+}
 </style>
 </head>
 <body>
 
+<!-- Login -->
 <div class="lw" id="LP">
   <div class="lc">
     <div class="ico">✏️</div>
     <h1>術科評分</h1>
-    <p>CM216 / CM214 / CM212<br>請輸入您的個人密碼</p>
-    <input class="pw" type="password" id="pw" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')login()">
-    <div id="er" style="color:var(--r);font-size:12px;margin-top:6px;display:none">密碼錯誤</div>
-    <button class="btn bp" onclick="login()">登入</button>
+    <p>CM216 ／ CM214 ／ CM212<br>請輸入您的個人密碼登入</p>
+    <input class="pw-inp" type="password" id="pw" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')doLogin()">
+    <div id="err" style="color:var(--r);font-size:12px;margin-top:8px;display:none">密碼錯誤</div>
+    <button class="btn-login" onclick="doLogin()">登入</button>
     <a href="index.html">← 返回管理後台</a>
   </div>
 </div>
 
+<!-- App -->
 <div id="APP" style="display:none">
   <div id="NAV"></div>
-  <div class="hdr">
+
+  <!-- Top bar -->
+  <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px">
       <div class="av" id="h-av">?</div>
       <div>
@@ -88,19 +133,31 @@ input.pw:focus{border-color:var(--ac)}
         <div style="font-size:11px;color:var(--m)" id="h-room">—</div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px">
-      <span class="dot"></span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span class="live-dot"></span>
       <span style="font-size:11px;color:var(--m)">即時同步</span>
+      <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:7px;padding:4px 10px;cursor:pointer;font-size:11px;font-family:inherit">登出</button>
     </div>
   </div>
 
-  <div class="app-layout">
+  <div class="app-wrap">
+    <!-- Sidebar: Queue -->
     <div class="sidebar">
-      <h3>候考佇列</h3>
-      <div id="queue-list"><p style="color:var(--m);font-size:12px;text-align:center;padding:20px 0">等待考生進入...</p></div>
+      <div class="sb-header">
+        <div class="sb-title">候考佇列</div>
+        <div class="sb-room" id="sb-room">—</div>
+      </div>
+      <div class="sb-scroll" id="queue-list">
+        <p style="color:var(--m);font-size:12px;text-align:center;padding:24px 0">等待考生進入...</p>
+      </div>
     </div>
-    <div class="main-panel" id="main-panel">
-      <div class="wait-card"><div class="ico">⏳</div><p>等待考生進入<br>工作人員掃碼後<br>考生資訊自動顯示</p></div>
+
+    <!-- Main: Scoring panel -->
+    <div class="main" id="main-panel">
+      <div class="wait-card">
+        <div class="ico">⏳</div>
+        <p>等待考生進入<br>工作人員在門口掃描考生QR碼後<br>考生資訊將自動顯示在左側</p>
+      </div>
     </div>
   </div>
 </div>
@@ -109,102 +166,182 @@ input.pw:focus{border-color:var(--ac)}
 document.getElementById('nav-css').textContent = NAV_CSS;
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
-let teacher = null, queue = {}, candidates = {}, selQid = null;
+let teacher = null, queue = {}, candidates = {}, selQid = null, newQids = new Set();
 
-function login() {
+function doLogin() {
   const pw = document.getElementById('pw').value.trim();
   const t = TEACHERS[pw];
   if (t?.type === 'practical') {
     teacher = { ...t, pw };
     document.getElementById('LP').style.display = 'none';
     document.getElementById('APP').style.display = 'block';
-    document.getElementById('NAV').innerHTML = buildNav('practical', t.name + ' 委員', 'logout()');
+    document.getElementById('NAV').innerHTML = buildNav('practical', t.name + ' 委員', 'doLogout()');
     document.getElementById('h-name').textContent = t.name + ' 委員';
     document.getElementById('h-av').textContent = t.name[0];
     document.getElementById('h-room').textContent = t.room + ' 術科';
-    document.getElementById('er').style.display = 'none';
+    document.getElementById('sb-room').textContent = t.room;
+    document.getElementById('err').style.display = 'none';
     initApp();
-  } else { document.getElementById('er').style.display = 'block'; }
+  } else { document.getElementById('err').style.display = 'block'; }
 }
-function logout() {
+
+function doLogout() {
   document.getElementById('APP').style.display = 'none';
   document.getElementById('LP').style.display = 'flex';
   document.getElementById('pw').value = '';
-  teacher = null; queue = {}; candidates = {};
+  teacher = null; queue = {}; candidates = {}; selQid = null; newQids.clear();
 }
 
 function initApp() {
-  db.ref('practicalQueue/' + teacher.room).on('value', s => { queue = s.val() || {}; render(); });
-  db.ref('candidates').on('value', s => { candidates = s.val() || {}; render(); });
+  // Listen to this room's queue
+  db.ref('practicalQueue/' + teacher.room).on('value', snap => {
+    const newData = snap.val() || {};
+    // Track newly arrived candidates
+    Object.keys(newData).forEach(qid => {
+      if (!queue[qid]) newQids.add(qid);
+    });
+    queue = newData;
+    render();
+    // Auto-select newest unscored if nothing selected
+    if (!selQid) autoSelect();
+  });
+  // Listen to candidates (for score updates)
+  db.ref('candidates').on('value', snap => {
+    candidates = snap.val() || {};
+    render();
+  });
 }
 
-function myScore(cid) { return candidates[cid]?.practicalScores?.[teacher.name] ?? null; }
+function myScore(cid) {
+  return candidates[cid]?.practicalScores?.[teacher.name] ?? null;
+}
 
-function render() { renderQueue(); renderMain(); }
+function autoSelect() {
+  // Find first unscored in queue
+  const items = sortedQueue();
+  const first = items.find(([, item]) => myScore(item.candidateId) === null);
+  if (first) selQid = first[0];
+}
+
+function sortedQueue() {
+  return Object.entries(queue).sort((a, b) => a[1].assignedAt - b[1].assignedAt);
+}
+
+function render() {
+  renderQueue();
+  renderMain();
+}
 
 function renderQueue() {
   const el = document.getElementById('queue-list');
-  const items = Object.entries(queue).sort((a, b) => a[1].assignedAt - b[1].assignedAt);
-  if (!items.length) { el.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:20px 0">等待考生進入...</p>'; return; }
+  const items = sortedQueue();
+  if (!items.length) {
+    el.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:24px 0">等待考生進入...</p>';
+    return;
+  }
   el.innerHTML = items.map(([qid, item]) => {
     const done = myScore(item.candidateId) !== null;
-    const isCur = !done && qid === (selQid || items.find(i => myScore(i[1].candidateId) === null)?.[0]);
+    const isCur = qid === selQid;
+    const isNew = newQids.has(qid) && !done;
     const cls = done ? 'done' : isCur ? 'cur' : 'wait';
-    const lbl = done ? '<span style="color:var(--m)">已完成</span>' : isCur ? '<span style="color:var(--g)">▶ 目前</span>' : '<span style="color:var(--y)">等候中</span>';
-    return `<div class="qi ${cls}" onclick="selQid='${qid}';render()">
-      <div class="qi-lbl">${lbl}</div>
+    const badge = done ? '已完成' : isCur ? '▶ 目前' : '等候中';
+    return `<div class="qi ${cls}${isNew ? ' qi-new' : ''}" onclick="selectQ('${qid}')">
+      <span class="qi-badge">${badge}</span>
       <div class="qi-name">${item.name}</div>
-      <div class="qi-sub">${item.school || ''}${item.dept ? ' ／' + item.dept : ''}</div>
-      ${done ? `<div class="qi-score">我的評分：${myScore(item.candidateId)}分</div>` : ''}
+      <div class="qi-school">${item.school || ''}${item.dept ? '\n' + item.dept : ''}</div>
+      ${done ? `<div class="qi-score">✓ 已評分：${myScore(item.candidateId)}分</div>` : ''}
     </div>`;
   }).join('');
 }
 
+function selectQ(qid) {
+  selQid = qid;
+  newQids.delete(qid);
+  render();
+}
+
 function renderMain() {
   const el = document.getElementById('main-panel');
-  const items = Object.entries(queue).sort((a, b) => a[1].assignedAt - b[1].assignedAt);
-  let tid = selQid;
-  if (!tid) { const u = items.find(([, item]) => myScore(item.candidateId) === null); tid = u?.[0]; }
-  if (!tid || !queue[tid]) {
+  if (!selQid || !queue[selQid]) {
+    const items = sortedQueue();
     if (items.length && items.every(([, item]) => myScore(item.candidateId) !== null)) {
-      el.innerHTML = '<div class="wait-card"><div class="ico">✅</div><p style="color:var(--g);font-weight:600">本場次全部完成！</p><p style="margin-top:8px">等待下一位考生...</p></div>';
+      el.innerHTML = `<div class="wait-card">
+        <div class="ico">✅</div>
+        <p style="color:var(--g);font-weight:600;font-size:16px">本場次全部評分完成！</p>
+        <p style="margin-top:10px">等待下一位考生進入...</p>
+      </div>`;
     } else {
-      el.innerHTML = '<div class="wait-card"><div class="ico">⏳</div><p>等待考生進入<br>工作人員掃碼後<br>考生資訊自動顯示</p></div>';
+      el.innerHTML = `<div class="wait-card">
+        <div class="ico">⏳</div>
+        <p>等待考生進入<br>工作人員在門口掃描考生QR碼後<br>考生資訊將自動顯示在左側佇列</p>
+      </div>`;
     }
     return;
   }
-  const item = queue[tid];
+
+  const item = queue[selQid];
   const ms = myScore(item.candidateId);
+  const c = candidates[item.candidateId] || {};
+
+  // ── 尚未評分 ──
   if (ms === null) {
-    el.innerHTML = `<div class="sc-card active">
-      <div class="sc-lbl">🟢 目前考生</div>
-      <div class="sc-name">${item.name}</div>
-      <div class="sc-info">${item.school || ''}${item.dept ? ' ／ ' + item.dept : ''}</div>
-      <div class="sc-rno">序號：${item.regNo}</div>
-      <div class="score-section">
-        <div style="font-size:13px;color:var(--m);margin-bottom:10px">請輸入術科分數（0–100）</div>
-        <div class="score-row">
-          <input type="number" class="snum" id="sinp" min="0" max="100" placeholder="—" onkeydown="if(event.key==='Enter')saveScore('${item.candidateId}')">
-          <span style="color:var(--m);font-size:13px">0 – 100 分</span>
+    el.innerHTML = `
+      <div class="sc active-glow">
+        <div class="cand-lbl">🟢 目前評分考生</div>
+        <div class="cand-name">${item.name}</div>
+        <div class="cand-no">序號：${item.regNo}</div>
+
+        <div class="info-chips">
+          <div class="chip" style="flex:1">
+            <span class="cl">就讀學校</span>
+            <span class="cv">${item.school || '—'}</span>
+          </div>
+          <div class="chip" style="flex:1">
+            <span class="cl">畢業系別</span>
+            <span class="cv">${item.dept || '—'}</span>
+          </div>
         </div>
-      </div>
-      <button class="btn bg" onclick="saveScore('${item.candidateId}')" style="margin-top:16px">✓ 確認送出</button>
-    </div>`;
-    setTimeout(() => { const inp = document.getElementById('sinp'); if (inp) inp.focus(); }, 50);
+
+        <div class="score-area">
+          <p>請輸入術科分數（0 – 100）</p>
+          <div class="score-row">
+            <input type="number" class="snum" id="sinp" min="0" max="100" placeholder="—"
+              onkeydown="if(event.key==='Enter')saveScore('${item.candidateId}')">
+            <span class="snum-hint">0 – 100 分</span>
+          </div>
+        </div>
+        <button class="btn-submit" onclick="saveScore('${item.candidateId}')">✓ 確認送出分數</button>
+      </div>`;
+    setTimeout(() => { const inp = document.getElementById('sinp'); if (inp) inp.focus(); }, 60);
+
+  // ── 已評分 ──
   } else {
-    el.innerHTML = `<div class="sc-card">
-      <div class="sc-lbl" style="color:var(--g)">✅ 已評分</div>
-      <div class="sc-name">${item.name}</div>
-      <div class="sc-info">${item.school || ''}${item.dept ? ' ／ ' + item.dept : ''}</div>
-      <div class="already-box">
-        <span>您的評分</span>
-        <strong style="font-family:'JetBrains Mono',monospace;font-size:22px">${ms} 分</strong>
+    el.innerHTML = `
+      <div class="sc">
+        <div class="cand-lbl" style="color:var(--g)">✅ 已完成評分</div>
+        <div class="cand-name">${item.name}</div>
+        <div class="cand-no">序號：${item.regNo}</div>
+
+        <div class="info-chips">
+          <div class="chip" style="flex:1">
+            <span class="cl">就讀學校</span>
+            <span class="cv">${item.school || '—'}</span>
+          </div>
+          <div class="chip" style="flex:1">
+            <span class="cl">畢業系別</span>
+            <span class="cv">${item.dept || '—'}</span>
+          </div>
+        </div>
+
+        <div class="scored-box">
+          <span class="scored-lbl">您的評分</span>
+          <span class="scored-val">${ms} 分</span>
+        </div>
+        <button class="btn-edit" onclick="editScore('${item.candidateId}')">修改分數</button>
       </div>
-      <button class="btn bo" onclick="editScore('${item.candidateId}')">修改分數</button>
-    </div>
-    <div class="sc-card" style="text-align:center;padding:28px;color:var(--m);font-size:14px">
-      請點擊左側佇列切換考生，或等待下一位進入
-    </div>`;
+      <div class="sc" style="text-align:center;padding:28px;color:var(--m);font-size:13px">
+        點擊左側佇列切換其他考生，或等待下一位進入
+      </div>`;
   }
 }
 
@@ -212,10 +349,18 @@ function saveScore(cid) {
   const el = document.getElementById('sinp');
   const v = parseInt(el?.value);
   if (isNaN(v) || v < 0 || v > 100) { alert('請輸入 0 到 100 的整數'); return; }
-  db.ref('candidates/' + cid + '/practicalScores/' + teacher.name).set(v).then(() => { selQid = null; render(); });
+  db.ref('candidates/' + cid + '/practicalScores/' + teacher.name).set(v).then(() => {
+    selQid = null;
+    autoSelect();
+    render();
+  });
 }
+
 function editScore(cid) {
-  db.ref('candidates/' + cid + '/practicalScores/' + teacher.name).remove();
+  db.ref('candidates/' + cid + '/practicalScores/' + teacher.name).remove().then(() => {
+    render();
+    setTimeout(() => { const inp = document.getElementById('sinp'); if (inp) inp.focus(); }, 60);
+  });
 }
 </script>
 </body>
