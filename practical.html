@@ -1,283 +1,222 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>術科評分</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="firebase-config.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0}
-  :root{--bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;--accent:#58a6ff;--accent2:#bc8cff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--text:#c9d1d9;--muted:#8b949e}
-  body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-  .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh}
-  .login-card{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:40px;width:380px;text-align:center}
-  .login-card .icon{font-size:52px;margin-bottom:16px}
-  .login-card h1{font-size:20px;font-weight:700;color:var(--accent);margin-bottom:6px}
-  .login-card p{color:var(--muted);font-size:13px;margin-bottom:24px;line-height:1.6}
-  .rooms-preview{display:flex;gap:8px;justify-content:center;margin-bottom:20px;flex-wrap:wrap}
-  .room-pill{font-size:12px;padding:4px 12px;border-radius:20px;background:rgba(188,140,255,.12);color:var(--accent2);border:1px solid rgba(188,140,255,.2)}
-  input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;color:var(--text);font-size:18px;font-family:'JetBrains Mono',monospace;outline:none;text-align:center;letter-spacing:.3em}
-  input:focus{border-color:var(--accent)}
-  button{cursor:pointer;font-family:inherit;font-weight:600;border:none;border-radius:10px;padding:12px;font-size:15px;transition:.2s;width:100%;margin-top:12px}
-  .btn-primary{background:var(--accent);color:#000}
-  .btn-success{background:var(--green);color:#fff}
-  .btn-success:hover{filter:brightness(1.1)}
-  .btn-outline{background:transparent;color:var(--muted);border:1px solid var(--border);margin-top:8px}
-  .btn-outline:hover{border-color:var(--accent);color:var(--accent)}
-  header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
-  .teacher-badge{display:flex;align-items:center;gap:10px}
-  .avatar{width:36px;height:36px;border-radius:50%;background:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
-  .live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-  .container{max-width:680px;margin:0 auto;padding:24px 16px}
-  .waiting-banner{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.2);border-radius:14px;padding:20px;text-align:center;margin-bottom:20px}
-  .waiting-banner .icon{font-size:36px;margin-bottom:8px}
-  .waiting-banner p{color:var(--muted);font-size:14px}
-  .active-banner{background:rgba(63,185,80,.08);border:2px solid rgba(63,185,80,.3);border-radius:14px;padding:20px;margin-bottom:20px;animation:glow 3s ease-in-out infinite}
-  @keyframes glow{0%,100%{border-color:rgba(63,185,80,.3)}50%{border-color:rgba(63,185,80,.6)}}
-  .active-banner .label{font-size:12px;color:var(--green);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
-  .active-banner .c-name{font-size:26px;font-weight:700}
-  .active-banner .c-num{font-size:13px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:16px}
-  .score-section{background:var(--surface2);border-radius:12px;padding:16px;margin-top:12px}
-  .score-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-  .score-row:last-child{margin-bottom:0}
-  .score-row label{flex:1;font-size:14px}
-  .score-num{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;width:80px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--text);outline:none}
-  .score-num:focus{border-color:var(--accent)}
-  .partner-info{background:var(--surface2);border-radius:10px;padding:12px 16px;font-size:13px;margin-top:12px}
-  .partner-info .pname{color:var(--accent2);font-weight:600}
-  .history-section{margin-top:24px}
-  .h-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px}
-  .h-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
-  .h-card .hname{font-weight:600;font-size:15px}
-  .h-card .hnum{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace}
-  .h-score{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:16px;color:var(--green)}
-  .edit-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;width:auto;margin:0 0 0 8px}
-  .edit-btn:hover{border-color:var(--accent);color:var(--accent)}
-  .no-history{text-align:center;padding:32px;color:var(--muted);font-size:14px}
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d1117;--s:#161b22;--s2:#21262d;--b:#30363d;--ac:#58a6ff;--ac2:#bc8cff;--g:#3fb950;--y:#d29922;--r:#f85149;--t:#e6edf3;--m:#8b949e}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
+</style>
+<style id="nav-css"></style>
+<style>
+.lw{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.lc{background:var(--s);border:1px solid var(--b);border-radius:24px;padding:40px;width:380px;text-align:center}
+.lc .ico{font-size:52px;margin-bottom:16px}
+.lc h1{font-size:20px;font-weight:700;color:var(--ac);margin-bottom:6px}
+.lc p{color:var(--m);font-size:13px;margin-bottom:24px;line-height:1.6}
+.lc a{color:var(--ac);font-size:12px;display:block;margin-top:14px}
+input.pw{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:12px 16px;color:var(--t);font-size:18px;font-family:'JetBrains Mono',monospace;outline:none;text-align:center;letter-spacing:.3em}
+input.pw:focus{border-color:var(--ac)}
+.btn{cursor:pointer;font-family:inherit;font-weight:600;border:none;border-radius:10px;padding:12px;font-size:15px;transition:.2s;width:100%;margin-top:12px}
+.bp{background:var(--ac);color:#000}.bp:hover{filter:brightness(1.1)}
+.bg{background:var(--g);color:#fff;font-size:17px;padding:16px}.bg:hover{filter:brightness(1.08)}
+.bo{background:transparent;color:var(--m);border:1px solid var(--b);margin-top:8px;font-size:13px;padding:9px}.bo:hover{border-color:var(--ac);color:var(--ac)}
+/* App */
+.app-layout{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 90px)}
+.sidebar{background:var(--s);border-right:1px solid var(--b);padding:14px;overflow-y:auto}
+.sidebar h3{font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;font-weight:500}
+.main-panel{padding:20px;overflow-y:auto}
+.hdr{background:var(--s);border-bottom:1px solid var(--b);padding:10px 18px;display:flex;align-items:center;justify-content:space-between}
+.av{width:32px;height:32px;border-radius:50%;background:var(--ac2);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+/* Queue */
+.qi{border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:.12s;border:2px solid transparent}
+.qi:hover{border-color:var(--b)}
+.qi.cur{background:rgba(63,185,80,.07);border-color:rgba(63,185,80,.35)}
+.qi.wait{background:var(--s2);border-color:transparent}
+.qi.done{opacity:.55;border-color:transparent}
+.qi-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:2px}
+.qi-name{font-size:13px;font-weight:600}
+.qi-sub{font-size:11px;color:var(--m);margin-top:1px}
+.qi-score{font-size:11px;color:var(--g);font-family:'JetBrains Mono',monospace;margin-top:2px}
+/* Score cards */
+.sc-card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:22px;margin-bottom:14px}
+.sc-card.active{border-color:var(--g);animation:glow 3s ease-in-out infinite}
+@keyframes glow{0%,100%{border-color:rgba(63,185,80,.3)}50%{border-color:rgba(63,185,80,.7)}}
+.sc-lbl{font-size:11px;color:var(--g);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.sc-name{font-size:26px;font-weight:700;margin-bottom:2px}
+.sc-info{font-size:13px;color:var(--m);margin-bottom:4px}
+.sc-rno{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--m);margin-bottom:16px}
+.score-section{background:var(--s2);border-radius:10px;padding:14px}
+.score-row{display:flex;align-items:center;gap:12px}
+.snum{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;width:90px;text-align:center;background:var(--s);border:2px solid var(--b);border-radius:10px;padding:10px;color:var(--t);outline:none}
+.snum:focus{border-color:var(--ac)}
+.already-box{background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.2);border-radius:10px;padding:12px 16px;font-size:14px;color:var(--g);display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.wait-card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:48px;text-align:center}
+.wait-card .ico{font-size:40px;margin-bottom:12px}
+.wait-card p{color:var(--m);font-size:14px;line-height:1.7}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--g);display:inline-block;animation:dot 2s infinite}
+@keyframes dot{0%,100%{opacity:1}50%{opacity:.3}}
+@media(max-width:680px){.app-layout{grid-template-columns:1fr}.sidebar{max-height:180px;border-right:none;border-bottom:1px solid var(--b)}}
 </style>
 </head>
 <body>
 
-<div class="login-wrap" id="login-page">
-  <div class="login-card">
-    <div class="icon">✏️</div>
-    <h1>術科評分系統</h1>
-    <p>術科考場 — 請輸入您的個人密碼登入</p>
-    <div class="rooms-preview">
-      <span class="room-pill">CM216</span>
-      <span class="room-pill">CM214</span>
-      <span class="room-pill">CM212</span>
-    </div>
-    <input type="password" id="pw" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')doLogin()">
-    <div id="login-err" style="color:var(--red);font-size:13px;margin-top:8px;display:none">密碼錯誤，請確認後再試</div>
-    <button class="btn-primary" onclick="doLogin()">登入</button>
+<div class="lw" id="LP">
+  <div class="lc">
+    <div class="ico">✏️</div>
+    <h1>術科評分</h1>
+    <p>CM216 / CM214 / CM212<br>請輸入您的個人密碼</p>
+    <input class="pw" type="password" id="pw" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')login()">
+    <div id="er" style="color:var(--r);font-size:12px;margin-top:6px;display:none">密碼錯誤</div>
+    <button class="btn bp" onclick="login()">登入</button>
+    <a href="index.html">← 返回管理後台</a>
   </div>
 </div>
 
-<div id="app" style="display:none">
-  <header>
-    <div class="teacher-badge">
-      <div class="avatar" id="h-avatar">?</div>
+<div id="APP" style="display:none">
+  <div id="NAV"></div>
+  <div class="hdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="av" id="h-av">?</div>
       <div>
-        <div style="font-size:14px;font-weight:600" id="h-name">—</div>
-        <div style="font-size:12px;color:var(--muted)" id="h-room">—</div>
+        <div style="font-size:13px;font-weight:600" id="h-name">—</div>
+        <div style="font-size:11px;color:var(--m)" id="h-room">—</div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div class="live-dot"></div>
-      <span style="font-size:12px;color:var(--muted)">即時同步</span>
-      <button onclick="logout()" style="background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:11px;width:auto;margin:0">登出</button>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span class="dot"></span>
+      <span style="font-size:11px;color:var(--m)">即時同步</span>
     </div>
-  </header>
+  </div>
 
-  <div class="container">
-    <!-- Active candidate (just assigned to this room) -->
-    <div id="active-zone"></div>
-
-    <!-- Scored history -->
-    <div class="history-section">
-      <div class="h-title">📋 本場次已評考生</div>
-      <div id="history-list"><div class="no-history">尚無評分記錄</div></div>
+  <div class="app-layout">
+    <div class="sidebar">
+      <h3>候考佇列</h3>
+      <div id="queue-list"><p style="color:var(--m);font-size:12px;text-align:center;padding:20px 0">等待考生進入...</p></div>
+    </div>
+    <div class="main-panel" id="main-panel">
+      <div class="wait-card"><div class="ico">⏳</div><p>等待考生進入<br>工作人員掃碼後<br>考生資訊自動顯示</p></div>
     </div>
   </div>
 </div>
 
 <script>
+document.getElementById('nav-css').textContent = NAV_CSS;
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
-let currentTeacher = null;
-let candidates = {};
-let editingId = null;
+let teacher = null, queue = {}, candidates = {}, selQid = null;
 
-function doLogin(){
+function login() {
   const pw = document.getElementById('pw').value.trim();
   const t = TEACHERS[pw];
-  if(t && t.type === 'practical'){
-    currentTeacher = {...t, pw};
-    document.getElementById('login-page').style.display='none';
-    document.getElementById('app').style.display='block';
-    document.getElementById('h-name').textContent=t.name+' 委員';
-    document.getElementById('h-room').textContent=t.room+' 術科實作';
-    document.getElementById('h-avatar').textContent=t.name[0];
-    document.getElementById('login-err').style.display='none';
+  if (t?.type === 'practical') {
+    teacher = { ...t, pw };
+    document.getElementById('LP').style.display = 'none';
+    document.getElementById('APP').style.display = 'block';
+    document.getElementById('NAV').innerHTML = buildNav('practical', t.name + ' 委員', 'logout()');
+    document.getElementById('h-name').textContent = t.name + ' 委員';
+    document.getElementById('h-av').textContent = t.name[0];
+    document.getElementById('h-room').textContent = t.room + ' 術科';
+    document.getElementById('er').style.display = 'none';
     initApp();
-  } else {
-    document.getElementById('login-err').style.display='block';
-  }
+  } else { document.getElementById('er').style.display = 'block'; }
+}
+function logout() {
+  document.getElementById('APP').style.display = 'none';
+  document.getElementById('LP').style.display = 'flex';
+  document.getElementById('pw').value = '';
+  teacher = null; queue = {}; candidates = {};
 }
 
-function logout(){
-  document.getElementById('app').style.display='none';
-  document.getElementById('login-page').style.display='flex';
-  document.getElementById('pw').value='';
-  currentTeacher=null;candidates={};
-  if(window._unsubscribe) window._unsubscribe();
+function initApp() {
+  db.ref('practicalQueue/' + teacher.room).on('value', s => { queue = s.val() || {}; render(); });
+  db.ref('candidates').on('value', s => { candidates = s.val() || {}; render(); });
 }
 
-function initApp(){
-  const ref = db.ref('candidates');
-  const handler = snap=>{
-    candidates=snap.val()||{};
-    render();
-  };
-  ref.on('value',handler);
-  window._unsubscribe=()=>ref.off('value',handler);
+function myScore(cid) { return candidates[cid]?.practicalScores?.[teacher.name] ?? null; }
+
+function render() { renderQueue(); renderMain(); }
+
+function renderQueue() {
+  const el = document.getElementById('queue-list');
+  const items = Object.entries(queue).sort((a, b) => a[1].assignedAt - b[1].assignedAt);
+  if (!items.length) { el.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:20px 0">等待考生進入...</p>'; return; }
+  el.innerHTML = items.map(([qid, item]) => {
+    const done = myScore(item.candidateId) !== null;
+    const isCur = !done && qid === (selQid || items.find(i => myScore(i[1].candidateId) === null)?.[0]);
+    const cls = done ? 'done' : isCur ? 'cur' : 'wait';
+    const lbl = done ? '<span style="color:var(--m)">已完成</span>' : isCur ? '<span style="color:var(--g)">▶ 目前</span>' : '<span style="color:var(--y)">等候中</span>';
+    return `<div class="qi ${cls}" onclick="selQid='${qid}';render()">
+      <div class="qi-lbl">${lbl}</div>
+      <div class="qi-name">${item.name}</div>
+      <div class="qi-sub">${item.school || ''}${item.dept ? ' ／' + item.dept : ''}</div>
+      ${done ? `<div class="qi-score">我的評分：${myScore(item.candidateId)}分</div>` : ''}
+    </div>`;
+  }).join('');
 }
 
-function getMyRoom(){ return currentTeacher.room; }
-
-function candidatesInMyRoom(){
-  return Object.values(candidates).filter(c=>c.assignedRoom===getMyRoom());
-}
-
-function myScore(c){
-  return c.practicalScores?.[currentTeacher.name]??null;
-}
-
-function partnerInfo(){
-  return Object.values(TEACHERS).find(t=>t.room===getMyRoom()&&t.type==='practical'&&t.name!==currentTeacher.name);
-}
-
-function partnerScore(c){
-  const p=partnerInfo();
-  return p ? (c.practicalScores?.[p.name]??null) : null;
-}
-
-function render(){
-  const myRoom=getMyRoom();
-  const inRoom=candidatesInMyRoom();
-
-  // Find most recently assigned candidate that I haven't scored yet
-  const unscored=inRoom.filter(c=>myScore(c)===null).sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
-  const activeCandidate = editingId ? (candidates[editingId]||null) : (unscored[0]||null);
-
-  // Active zone
-  const az=document.getElementById('active-zone');
-  if(activeCandidate && activeCandidate.assignedRoom===myRoom){
-    const ms=myScore(activeCandidate);
-    const ps=partnerScore(activeCandidate);
-    const partner=partnerInfo();
-    if(ms===null||editingId===activeCandidate.id){
-      az.innerHTML=`
-        <div class="active-banner">
-          <div class="label">🟢 目前考生</div>
-          <div class="c-name">${activeCandidate.name}</div>
-          <div class="c-num">考生號碼：${activeCandidate.number}</div>
-          <div class="score-section">
-            <div style="font-size:13px;color:var(--muted);margin-bottom:10px">請輸入術科分數（0–100）</div>
-            <div class="score-row">
-              <label>術科總分</label>
-              <input type="number" class="score-num" id="score-input" min="0" max="100" placeholder="—"
-                onkeydown="if(event.key==='Enter')saveScore('${activeCandidate.id}')">
-            </div>
-          </div>
-          ${partner&&ps!==null?`<div class="partner-info">👤 <span class="pname">${partner.name}</span> 委員已評：${ps} 分</div>`:''}
-          <button class="btn-success" onclick="saveScore('${activeCandidate.id}')" style="margin-top:14px">✓ 確認送出分數</button>
-          ${editingId?`<button class="btn-outline" onclick="cancelEdit()">取消修改</button>`:''}
-        </div>`;
-      setTimeout(()=>{const el=document.getElementById('score-input');if(el){if(editingId)el.value=ms||'';el.focus();}},50);
+function renderMain() {
+  const el = document.getElementById('main-panel');
+  const items = Object.entries(queue).sort((a, b) => a[1].assignedAt - b[1].assignedAt);
+  let tid = selQid;
+  if (!tid) { const u = items.find(([, item]) => myScore(item.candidateId) === null); tid = u?.[0]; }
+  if (!tid || !queue[tid]) {
+    if (items.length && items.every(([, item]) => myScore(item.candidateId) !== null)) {
+      el.innerHTML = '<div class="wait-card"><div class="ico">✅</div><p style="color:var(--g);font-weight:600">本場次全部完成！</p><p style="margin-top:8px">等待下一位考生...</p></div>';
     } else {
-      az.innerHTML=`
-        <div class="active-banner">
-          <div class="label">✅ 已完成評分</div>
-          <div class="c-name">${activeCandidate.name}</div>
-          <div class="c-num">考生號碼：${activeCandidate.number}</div>
-          <div class="score-section">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <span style="color:var(--muted);font-size:13px">您的評分</span>
-              <strong style="font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--green)">${ms} 分</strong>
-            </div>
-            ${partner&&ps!==null?`<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-              <span style="color:var(--muted);font-size:13px">${partner.name} 委員</span>
-              <strong style="font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--accent2)">${ps} 分</strong>
-            </div>`:''}
-            ${ms!==null&&ps!==null?`<div style="border-top:1px solid var(--border);margin-top:10px;padding-top:10px;display:flex;justify-content:space-between;align-items:center">
-              <span style="color:var(--muted);font-size:13px">術科平均</span>
-              <strong style="font-family:'JetBrains Mono',monospace;font-size:22px;color:var(--green)">${((ms+ps)/2).toFixed(1)} 分</strong>
-            </div>`:''}
-          </div>
-          <p style="font-size:12px;color:var(--muted);margin-top:12px;text-align:center">等待下一位考生進入...</p>
-          <button class="btn-outline" onclick="startEdit('${activeCandidate.id}')">修改分數</button>
-        </div>`;
+      el.innerHTML = '<div class="wait-card"><div class="ico">⏳</div><p>等待考生進入<br>工作人員掃碼後<br>考生資訊自動顯示</p></div>';
     }
-  } else {
-    az.innerHTML=`
-      <div class="waiting-banner">
-        <div class="icon">⏳</div>
-        <p><strong>${myRoom}</strong> 等待考生進入<br>工作人員掃碼後，考生資訊將自動出現</p>
-      </div>`;
+    return;
   }
-
-  // History
-  const scored=inRoom.filter(c=>myScore(c)!==null&&c.id!==activeCandidate?.id)
-    .sort((a,b)=>(b.assignedAt||0)-(a.assignedAt||0));
-  const hl=document.getElementById('history-list');
-  if(!scored.length){
-    hl.innerHTML='<div class="no-history">本場次尚無已評考生</div>';
+  const item = queue[tid];
+  const ms = myScore(item.candidateId);
+  if (ms === null) {
+    el.innerHTML = `<div class="sc-card active">
+      <div class="sc-lbl">🟢 目前考生</div>
+      <div class="sc-name">${item.name}</div>
+      <div class="sc-info">${item.school || ''}${item.dept ? ' ／ ' + item.dept : ''}</div>
+      <div class="sc-rno">序號：${item.regNo}</div>
+      <div class="score-section">
+        <div style="font-size:13px;color:var(--m);margin-bottom:10px">請輸入術科分數（0–100）</div>
+        <div class="score-row">
+          <input type="number" class="snum" id="sinp" min="0" max="100" placeholder="—" onkeydown="if(event.key==='Enter')saveScore('${item.candidateId}')">
+          <span style="color:var(--m);font-size:13px">0 – 100 分</span>
+        </div>
+      </div>
+      <button class="btn bg" onclick="saveScore('${item.candidateId}')" style="margin-top:16px">✓ 確認送出</button>
+    </div>`;
+    setTimeout(() => { const inp = document.getElementById('sinp'); if (inp) inp.focus(); }, 50);
   } else {
-    hl.innerHTML=scored.map(c=>{
-      const ms=myScore(c);
-      return `<div class="h-card">
-        <div>
-          <div class="hname">${c.name}</div>
-          <div class="hnum">號碼：${c.number}</div>
-        </div>
-        <div style="display:flex;align-items:center">
-          <span class="h-score">${ms}分</span>
-          <button class="edit-btn" onclick="startEdit('${c.id}')">修改</button>
-        </div>
-      </div>`;
-    }).join('');
+    el.innerHTML = `<div class="sc-card">
+      <div class="sc-lbl" style="color:var(--g)">✅ 已評分</div>
+      <div class="sc-name">${item.name}</div>
+      <div class="sc-info">${item.school || ''}${item.dept ? ' ／ ' + item.dept : ''}</div>
+      <div class="already-box">
+        <span>您的評分</span>
+        <strong style="font-family:'JetBrains Mono',monospace;font-size:22px">${ms} 分</strong>
+      </div>
+      <button class="btn bo" onclick="editScore('${item.candidateId}')">修改分數</button>
+    </div>
+    <div class="sc-card" style="text-align:center;padding:28px;color:var(--m);font-size:14px">
+      請點擊左側佇列切換考生，或等待下一位進入
+    </div>`;
   }
 }
 
-function saveScore(id){
-  const el=document.getElementById('score-input');
-  const v=parseInt(el?.value);
-  if(isNaN(v)||v<0||v>100){alert('請輸入 0 到 100 的整數分數');return;}
-  db.ref('candidates/'+id+'/practicalScores/'+currentTeacher.name).set(v).then(()=>{
-    editingId=null;
-  });
+function saveScore(cid) {
+  const el = document.getElementById('sinp');
+  const v = parseInt(el?.value);
+  if (isNaN(v) || v < 0 || v > 100) { alert('請輸入 0 到 100 的整數'); return; }
+  db.ref('candidates/' + cid + '/practicalScores/' + teacher.name).set(v).then(() => { selQid = null; render(); });
 }
-
-function startEdit(id){
-  editingId=id;
-  render();
-  setTimeout(()=>{
-    const el=document.getElementById('score-input');
-    if(el){
-      const ms=myScore(candidates[id]);
-      el.value=ms!==null?ms:'';
-      el.focus();
-    }
-  },50);
+function editScore(cid) {
+  db.ref('candidates/' + cid + '/practicalScores/' + teacher.name).remove();
 }
-
-function cancelEdit(){editingId=null;render();}
 </script>
 </body>
 </html>

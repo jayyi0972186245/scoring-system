@@ -1,160 +1,170 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>評分系統 — 管理後台</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理後台 — 評分系統</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="firebase-config.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0}
-  :root{
-    --bg:#0f1117;--surface:#1a1d27;--surface2:#22263a;--border:#2e3352;
-    --accent:#4f8ef7;--accent2:#7c6af7;--green:#3dd68c;--yellow:#f7c948;--red:#f75f5f;
-    --text:#e8eaf6;--muted:#8892b0;
-  }
-  body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-  header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100}
-  header h1{font-size:18px;font-weight:700;color:var(--accent)}
-  header span{font-size:13px;color:var(--muted)}
-  .badge{background:var(--accent2);color:#fff;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
-  .container{max-width:1100px;margin:0 auto;padding:32px 24px}
-  .grid{display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start}
-  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px}
-  .card h2{font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:20px;font-weight:500}
-  label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;margin-top:14px}
-  input,select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:inherit;outline:none;transition:.2s}
-  input:focus,select:focus{border-color:var(--accent)}
-  button{cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;border:none;border-radius:8px;padding:11px 20px;transition:.2s}
-  .btn-primary{background:var(--accent);color:#fff;width:100%;margin-top:18px}
-  .btn-primary:hover{background:#3a7de8}
-  .btn-danger{background:rgba(247,95,95,.15);color:var(--red);border:1px solid rgba(247,95,95,.3);padding:6px 12px;font-size:12px;border-radius:6px}
-  .btn-danger:hover{background:rgba(247,95,95,.25)}
-  .btn-sm{background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 12px;font-size:12px;border-radius:6px}
-  .btn-sm:hover{border-color:var(--accent);color:var(--accent)}
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
-  .stat{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center}
-  .stat .num{font-size:28px;font-weight:700;color:var(--accent);font-family:'JetBrains Mono',monospace}
-  .stat .lbl{font-size:12px;color:var(--muted);margin-top:4px}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th{color:var(--muted);font-weight:500;text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
-  td{padding:10px 12px;border-bottom:1px solid rgba(46,51,82,.5);vertical-align:middle}
-  tr:hover td{background:rgba(79,142,247,.04)}
-  .score-badge{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;padding:3px 10px;border-radius:6px;display:inline-block}
-  .score-good{background:rgba(61,214,140,.12);color:var(--green)}
-  .score-mid{background:rgba(247,201,72,.12);color:var(--yellow)}
-  .score-low{background:rgba(247,95,95,.12);color:var(--red)}
-  .score-none{background:var(--surface2);color:var(--muted)}
-  .room-tag{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600}
-  .room-interview{background:rgba(79,142,247,.15);color:var(--accent)}
-  .room-practical{background:rgba(124,106,247,.15);color:var(--accent2)}
-  #qr-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-  #qr-modal.show{display:flex}
-  .modal-box{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;text-align:center;min-width:300px}
-  .modal-box h3{font-size:18px;margin-bottom:4px}
-  .modal-box p{color:var(--muted);font-size:13px;margin-bottom:20px}
-  #qr-container{background:#fff;padding:16px;border-radius:12px;display:inline-block;margin-bottom:20px}
-  .modal-close{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 24px;cursor:pointer;font-size:14px}
-  .export-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
-  .no-data{text-align:center;padding:48px;color:var(--muted);font-size:14px}
-  .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
-  .login-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:40px;width:360px}
-  .login-card h1{font-size:22px;font-weight:700;color:var(--accent);margin-bottom:4px}
-  .login-card p{color:var(--muted);font-size:13px;margin-bottom:28px}
-  .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
-  .dot-green{background:var(--green)}
-  .dot-yellow{background:var(--yellow)}
-  .dot-gray{background:var(--muted)}
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d1117;--s:#161b22;--s2:#21262d;--b:#30363d;--ac:#58a6ff;--ac2:#bc8cff;--g:#3fb950;--y:#e3b341;--r:#f85149;--t:#e6edf3;--m:#8b949e}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
+/* Login */
+.lw{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.lc{background:var(--s);border:1px solid var(--b);border-radius:20px;padding:40px;width:340px;text-align:center}
+.lc h1{font-size:20px;font-weight:700;color:var(--ac);margin-bottom:6px}
+.lc p{color:var(--m);font-size:13px;margin-bottom:24px}
+.lc input{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:11px 14px;color:var(--t);font-size:15px;font-family:inherit;outline:none;text-align:center;letter-spacing:.15em}
+.lc input:focus{border-color:var(--ac)}
+.lc .links{margin-top:16px;font-size:12px;color:var(--m)}
+.lc .links a{color:var(--ac);text-decoration:none}
+/* Buttons */
+.btn{cursor:pointer;font-family:inherit;font-weight:600;border:none;border-radius:8px;padding:9px 16px;font-size:13px;transition:.12s}
+.bp{background:var(--ac);color:#000;width:100%;margin-top:12px;padding:11px}
+.bp:hover{filter:brightness(1.1)}
+.bg{background:var(--g);color:#fff}.bg:hover{filter:brightness(1.1)}
+.bo{background:transparent;border:1px solid var(--b);color:var(--m)}.bo:hover{border-color:var(--ac);color:var(--ac)}
+.br{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);color:var(--r)}.br:hover{background:rgba(248,81,73,.2)}
+.bsm{padding:5px 10px;font-size:11px}
+/* Layout */
+.wrap{max-width:1280px;margin:0 auto;padding:20px 16px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.st{background:var(--s);border:1px solid var(--b);border-radius:12px;padding:14px;text-align:center}
+.st .n{font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--ac)}
+.st .l{font-size:11px;color:var(--m);margin-top:2px}
+.grid2{display:grid;grid-template-columns:310px 1fr;gap:16px;align-items:start}
+.card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:20px;margin-bottom:14px}
+.ch2{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-weight:500}
+/* Inputs */
+.inp{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:9px 12px;color:var(--t);font-size:13px;outline:none;font-family:inherit}
+.inp:focus{border-color:var(--ac)}
+/* Drop zone */
+.dz{border:2px dashed var(--b);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:.15s}
+.dz:hover,.dz.drag{border-color:var(--ac);background:rgba(88,166,255,.04)}
+.dz-icon{font-size:28px;margin-bottom:8px}
+.dz p{color:var(--m);font-size:13px}
+.dz small{font-size:11px;color:var(--m2,#6e7681);display:block;margin-top:4px}
+/* Table */
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.srch{flex:1;min-width:120px}
+.ftab{padding:4px 10px;border-radius:14px;background:var(--s2);border:1px solid var(--b);color:var(--m);cursor:pointer;font-size:11px;font-weight:500;transition:.12s}
+.ftab.on{background:var(--ac);color:#000;border-color:var(--ac)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{color:var(--m);font-weight:500;text-align:left;padding:7px 10px;border-bottom:1px solid var(--b);font-size:11px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4);vertical-align:middle}
+tr:hover td{background:rgba(88,166,255,.025)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px}
+.badge{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;white-space:nowrap;display:inline-block}
+.bdg{background:rgba(63,185,80,.12);color:var(--g)}
+.bdy{background:rgba(227,179,65,.12);color:var(--y)}
+.bdm{background:var(--s2);color:var(--m)}
+.bdb{background:rgba(88,166,255,.12);color:var(--ac)}
+/* QR Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.show{display:flex}
+.modal{background:var(--s);border:1px solid var(--b);border-radius:18px;padding:28px;text-align:center;min-width:280px}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:4px}
+.modal p{color:var(--m);font-size:12px;margin-bottom:14px}
+#qr-canvas{background:#fff;padding:12px;border-radius:10px;display:inline-block;margin-bottom:14px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr}}
+@media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr)}}
 </style>
+<style id="nav-css"></style>
 </head>
 <body>
 
 <!-- Login -->
-<div class="login-wrap" id="login-page">
-  <div class="login-card">
+<div class="lw" id="LP">
+  <div class="lc">
     <h1>🏫 評分管理系統</h1>
-    <p>請輸入管理員密碼登入</p>
-    <label>管理員密碼</label>
-    <input type="password" id="admin-pw" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="btn-primary" onclick="doLogin()">登入管理後台</button>
-    <p style="margin-top:16px;font-size:12px;color:var(--muted);text-align:center">其他頁面：<a href="scan.html" style="color:var(--accent)">掃碼頁</a> | <a href="interview.html" style="color:var(--accent)">面試評分</a> | <a href="practical.html" style="color:var(--accent)">術科評分</a> | <a href="results.html" style="color:var(--accent)">成績總表</a></p>
+    <p>請輸入管理員密碼</p>
+    <input type="password" id="pw" placeholder="管理員密碼" onkeydown="if(event.key==='Enter')login()">
+    <div id="er" style="color:var(--r);font-size:12px;margin-top:6px;display:none">密碼錯誤</div>
+    <button class="btn bp" onclick="login()">登入管理後台</button>
+    <div class="links">
+      其他頁面：
+      <a href="checkin.html">學生報到</a> |
+      <a href="interview.html">面試評分</a> |
+      <a href="practical.html">術科評分</a> |
+      <a href="results.html">成績總表</a>
+    </div>
   </div>
 </div>
 
-<!-- Main App -->
-<div id="main-app" style="display:none">
-  <header>
-    <div>
-      <h1>📊 評分管理後台</h1>
+<!-- App -->
+<div id="APP" style="display:none">
+  <div id="NAV"></div>
+  <div class="wrap">
+    <div class="stats">
+      <div class="st"><div class="n" id="s0">0</div><div class="l">總考生</div></div>
+      <div class="st"><div class="n" id="s1">0</div><div class="l">已報到</div></div>
+      <div class="st"><div class="n" id="s2">0</div><div class="l">面試完成</div></div>
+      <div class="st"><div class="n" id="s3">0</div><div class="l">術科完成</div></div>
+      <div class="st"><div class="n" id="s4">0</div><div class="l">全部完成</div></div>
     </div>
-    <span class="badge">管理員</span>
-    <span style="margin-left:auto;font-size:13px;color:var(--muted)" id="live-indicator">
-      <span class="status-dot dot-green"></span>即時同步中
-    </span>
-    <button class="btn-sm" onclick="logout()" style="margin-left:12px">登出</button>
-  </header>
 
-  <div class="container">
-    <div class="grid">
-      <!-- Left: Add candidate -->
+    <div class="grid2">
+      <!-- Left panel -->
       <div>
+        <!-- Import Excel -->
         <div class="card">
-          <h2>➕ 新增考生</h2>
-          <label>考生姓名</label>
-          <input type="text" id="c-name" placeholder="例：王小明">
-          <label>考生號碼</label>
-          <input type="text" id="c-num" placeholder="例：001">
-          <button class="btn-primary" onclick="addCandidate()">新增考生</button>
+          <div class="ch2">📥 匯入考生 Excel</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:12px">自動讀取欄位：報名序號、姓名、身分證末四碼、手機末三碼、畢業系別、就讀學校</p>
+          <div class="dz" id="dz" onclick="document.getElementById('fi').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="onDrop(event)">
+            <div class="dz-icon">📂</div>
+            <p>點擊或拖曳 Excel 檔案</p>
+            <small>.xlsx / .xls 格式</small>
+          </div>
+          <input type="file" id="fi" accept=".xlsx,.xls" style="display:none" onchange="onFile(this.files[0])">
+          <div id="import-msg" style="margin-top:10px;font-size:13px;display:none"></div>
         </div>
 
-        <div class="card" style="margin-top:16px">
-          <h2>📥 批次新增</h2>
-          <label>每行一位（姓名 號碼）</label>
-          <textarea id="batch-input" rows="6" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-size:13px;font-family:inherit;resize:vertical" placeholder="王小明 001&#10;李小華 002&#10;張大明 003"></textarea>
-          <button class="btn-primary" onclick="batchAdd()">批次新增</button>
+        <!-- Checkin QR -->
+        <div class="card">
+          <div class="ch2">✅ 學生報到 QR Code</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">列印後貼在入口，學生掃描此QR Code即可報到</p>
+          <div style="text-align:center">
+            <div id="checkin-qr" style="background:#fff;padding:12px;border-radius:10px;display:inline-block"></div>
+          </div>
+          <button class="btn bo" style="width:100%;margin-top:12px" onclick="printCheckinQR()">🖨️ 列印報到QR Code</button>
         </div>
 
-        <div class="card" style="margin-top:16px">
-          <h2>⚠️ 危險操作</h2>
-          <button class="btn-danger" style="width:100%" onclick="clearAll()">清除所有考生資料</button>
+        <!-- Danger -->
+        <div class="card">
+          <div class="ch2">⚠️ 危險操作</div>
+          <button class="btn br" style="width:100%" onclick="clearAll()">清除所有考生資料</button>
         </div>
       </div>
 
-      <!-- Right: Candidates list -->
-      <div>
-        <div class="stats" id="stats-bar">
-          <div class="stat"><div class="num" id="s-total">0</div><div class="lbl">總考生數</div></div>
-          <div class="stat"><div class="num" id="s-done">0</div><div class="lbl">已完成評分</div></div>
-          <div class="stat"><div class="num" id="s-avg">—</div><div class="lbl">平均總分</div></div>
+      <!-- Right: Candidates -->
+      <div class="card">
+        <div class="ch2">👥 考生名單</div>
+        <div class="toolbar">
+          <input class="inp srch" id="srch" placeholder="🔍 搜尋姓名、序號、學校..." oninput="renderTable()">
+          <div class="ftab on" onclick="setFilt('all',this)">全部</div>
+          <div class="ftab" onclick="setFilt('checkedin',this)">已報到</div>
+          <div class="ftab" onclick="setFilt('not',this)">未報到</div>
+          <div class="ftab" onclick="setFilt('done',this)">全完成</div>
+          <button class="btn bo bsm" onclick="exportCSV()">📤 CSV</button>
+          <button class="btn bo bsm" onclick="printAllQR()">🖨️ QR</button>
         </div>
-
-        <div class="card">
-          <h2>👥 考生名單</h2>
-          <div class="export-bar">
-            <button class="btn-sm" onclick="exportCSV()">📤 匯出 CSV</button>
-            <button class="btn-sm" onclick="printAll()">🖨️ 列印所有 QR</button>
-            <input type="text" id="search" placeholder="搜尋姓名或號碼..." style="flex:1;margin:0" oninput="renderTable()">
-          </div>
-          <div style="overflow-x:auto">
-            <table>
-              <thead>
-                <tr>
-                  <th>號碼</th>
-                  <th>姓名</th>
-                  <th>面試平均</th>
-                  <th>術科平均</th>
-                  <th>指派教室</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody id="table-body">
-                <tr><td colspan="6" class="no-data">載入中...</td></tr>
-              </tbody>
-            </table>
-          </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>序號</th><th>姓名</th><th>身分證末4</th><th>手機末3</th>
+              <th>系別</th><th>學校</th>
+              <th>報到</th><th>面試</th><th>術科</th><th>教室</th><th>操作</th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -162,183 +172,180 @@
 </div>
 
 <!-- QR Modal -->
-<div id="qr-modal">
-  <div class="modal-box">
-    <h3 id="qr-name">考生姓名</h3>
-    <p id="qr-num">號碼：001</p>
-    <div id="qr-container"><div id="qr-canvas"></div></div>
-    <br>
-    <button class="modal-close" onclick="closeQR()">關閉</button>
+<div class="overlay" id="qrModal">
+  <div class="modal">
+    <h3 id="qm-name">—</h3>
+    <p id="qm-info">—</p>
+    <div id="qr-canvas"></div>
+    <button class="btn bo" onclick="document.getElementById('qrModal').classList.remove('show')">關閉</button>
   </div>
 </div>
 
-<div id="print-area" style="display:none"></div>
-
 <script>
+document.getElementById('nav-css').textContent = NAV_CSS;
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
-let candidates = {};
+let candidates = {}, filt = 'all';
 
-function doLogin(){
-  const pw = document.getElementById('admin-pw').value;
-  if(TEACHERS[pw] && TEACHERS[pw].type === 'admin'){
-    document.getElementById('login-page').style.display='none';
-    document.getElementById('main-app').style.display='block';
-    initApp();
-  } else {
-    alert('密碼錯誤');
-  }
+function login() {
+  const pw = document.getElementById('pw').value.trim();
+  if (TEACHERS[pw]?.type === 'admin') {
+    document.getElementById('LP').style.display = 'none';
+    document.getElementById('APP').style.display = 'block';
+    document.getElementById('NAV').innerHTML = buildNav('index', '管理員', 'logout()');
+    initCheckinQR();
+    db.ref('candidates').on('value', s => { candidates = s.val() || {}; updateStats(); renderTable(); });
+    document.getElementById('er').style.display = 'none';
+  } else { document.getElementById('er').style.display = 'block'; }
 }
-function logout(){
-  document.getElementById('main-app').style.display='none';
-  document.getElementById('login-page').style.display='flex';
-  document.getElementById('admin-pw').value='';
-}
-
-function initApp(){
-  db.ref('candidates').on('value', snap=>{
-    candidates = snap.val() || {};
-    renderTable();
-    updateStats();
-  });
+function logout() {
+  document.getElementById('APP').style.display = 'none';
+  document.getElementById('LP').style.display = 'flex';
+  document.getElementById('pw').value = '';
 }
 
-function renderTable(){
-  const q = (document.getElementById('search').value||'').toLowerCase();
-  const body = document.getElementById('table-body');
-  const list = Object.values(candidates).filter(c=>
-    !q || c.name.toLowerCase().includes(q) || c.number.includes(q)
-  ).sort((a,b)=>a.number.localeCompare(b.number));
+function avg(o) {
+  if (!o) return null;
+  const v = Object.values(o).filter(x => x !== null && x !== undefined && x !== '');
+  return v.length ? v.reduce((a, b) => a + Number(b), 0) / v.length : null;
+}
 
-  if(!list.length){
-    body.innerHTML='<tr><td colspan="6" class="no-data">尚無考生資料</td></tr>';
-    return;
-  }
-  body.innerHTML = list.map(c=>{
-    const iv = avgScore(c.interviewScores);
-    const pr = avgScore(c.practicalScores);
-    const room = c.assignedRoom||'—';
+function updateStats() {
+  const list = Object.values(candidates);
+  document.getElementById('s0').textContent = list.length;
+  document.getElementById('s1').textContent = list.filter(c => c.checkedIn).length;
+  document.getElementById('s2').textContent = list.filter(c => avg(c.interviewScores) !== null).length;
+  document.getElementById('s3').textContent = list.filter(c => avg(c.practicalScores) !== null).length;
+  document.getElementById('s4').textContent = list.filter(c => avg(c.interviewScores) !== null && avg(c.practicalScores) !== null).length;
+}
+
+function setFilt(f, el) {
+  filt = f;
+  document.querySelectorAll('.ftab').forEach(t => t.classList.toggle('on', t === el));
+  renderTable();
+}
+
+function renderTable() {
+  const q = (document.getElementById('srch').value || '').toLowerCase();
+  let list = Object.values(candidates).filter(c => {
+    if (q && !c.name?.toLowerCase().includes(q) && !String(c.regNo || '').includes(q) && !c.school?.toLowerCase().includes(q)) return false;
+    if (filt === 'checkedin') return !!c.checkedIn;
+    if (filt === 'not') return !c.checkedIn;
+    if (filt === 'done') return avg(c.interviewScores) !== null && avg(c.practicalScores) !== null;
+    return true;
+  }).sort((a, b) => String(a.regNo || '').localeCompare(String(b.regNo || '')));
+
+  const tbody = document.getElementById('tbody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--m)">沒有符合的考生</td></tr>'; return; }
+
+  tbody.innerHTML = list.map(c => {
+    const iv = avg(c.interviewScores), pr = avg(c.practicalScores);
     return `<tr>
-      <td><span style="font-family:'JetBrains Mono',monospace;color:var(--muted)">${c.number}</span></td>
-      <td><strong>${c.name}</strong></td>
-      <td>${scoreBadge(iv)}</td>
-      <td>${scoreBadge(pr)}</td>
-      <td>${room==='—'?'<span style="color:var(--muted)">未指派</span>':`<span class="room-tag room-practical">${room}</span>`}</td>
-      <td style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn-sm" onclick="showQR('${c.id}')">QR</button>
-        <button class="btn-danger" onclick="deleteCandidate('${c.id}')">刪除</button>
+      <td class="mono">${c.regNo || ''}</td>
+      <td><strong>${c.name || ''}</strong></td>
+      <td class="mono">${c.idLast4 || '—'}</td>
+      <td class="mono">${c.phoneLast3 || '—'}</td>
+      <td style="font-size:11px;max-width:90px">${c.dept || '—'}</td>
+      <td style="font-size:11px;max-width:100px">${c.school || '—'}</td>
+      <td>${c.checkedIn
+        ? `<span class="badge bdg">✓ 已報到</span>`
+        : `<button class="btn bg bsm" onclick="manualCheckin('${c.id}')">報到</button>`}</td>
+      <td>${iv !== null ? `<span class="badge bdb">${iv.toFixed(1)}</span>` : '<span class="badge bdm">未評</span>'}</td>
+      <td>${pr !== null ? `<span class="badge bdb">${pr.toFixed(1)}</span>` : '<span class="badge bdm">未評</span>'}</td>
+      <td>${c.assignedRoom ? `<span class="badge bdy">${c.assignedRoom}</span>` : '<span style="color:var(--m);font-size:11px">—</span>'}</td>
+      <td style="display:flex;gap:4px">
+        <button class="btn bo bsm" onclick="showQR('${c.id}')">QR</button>
+        <button class="btn br bsm" onclick="delC('${c.id}')">刪</button>
       </td>
     </tr>`;
   }).join('');
 }
 
-function scoreBadge(v){
-  if(v===null) return '<span class="score-badge score-none">未評</span>';
-  const cls = v>=80?'score-good':v>=60?'score-mid':'score-low';
-  return `<span class="score-badge ${cls}">${v.toFixed(1)}</span>`;
-}
+function manualCheckin(id) { db.ref('candidates/' + id).update({ checkedIn: true, checkinTime: Date.now(), checkinMethod: 'manual' }); }
+function delC(id) { if (confirm('確定刪除此考生？')) db.ref('candidates/' + id).remove(); }
+function clearAll() { if (confirm('確定清除所有考生？') && confirm('再次確認：清除全部資料？')) db.ref('candidates').remove(); }
 
-function avgScore(obj){
-  if(!obj) return null;
-  const vals = Object.values(obj).filter(v=>v!==null&&v!==undefined&&v!=='');
-  if(!vals.length) return null;
-  return vals.reduce((a,b)=>a+Number(b),0)/vals.length;
-}
-
-function updateStats(){
-  const list = Object.values(candidates);
-  document.getElementById('s-total').textContent = list.length;
-  const done = list.filter(c=>avgScore(c.interviewScores)!==null&&avgScore(c.practicalScores)!==null);
-  document.getElementById('s-done').textContent = done.length;
-  if(done.length){
-    const avg = done.reduce((a,c)=>{
-      const iv=avgScore(c.interviewScores), pr=avgScore(c.practicalScores);
-      return a+(iv+pr)/2;
-    },0)/done.length;
-    document.getElementById('s-avg').textContent = avg.toFixed(1);
-  } else {
-    document.getElementById('s-avg').textContent='—';
-  }
-}
-
-function addCandidate(){
-  const name=document.getElementById('c-name').value.trim();
-  const num=document.getElementById('c-num').value.trim();
-  if(!name||!num){alert('請填寫姓名和號碼');return}
-  const id='c_'+Date.now();
-  db.ref('candidates/'+id).set({id,name,number:num,createdAt:Date.now()});
-  document.getElementById('c-name').value='';
-  document.getElementById('c-num').value='';
-}
-
-function batchAdd(){
-  const lines=document.getElementById('batch-input').value.trim().split('\n');
-  lines.forEach(line=>{
-    const parts=line.trim().split(/\s+/);
-    if(parts.length>=2){
-      const id='c_'+Date.now()+'_'+Math.random().toString(36).slice(2,6);
-      db.ref('candidates/'+id).set({id,name:parts[0],number:parts[1],createdAt:Date.now()});
+// Excel
+function onDrop(e) { e.preventDefault(); document.getElementById('dz').classList.remove('drag'); onFile(e.dataTransfer.files[0]); }
+function onFile(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      let ok = 0, skip = 0; const batch = {};
+      rows.forEach(row => {
+        const regNo = String(row['報名序號'] || '').trim();
+        const name = String(row['姓名'] || '').trim();
+        if (!regNo || !name) { skip++; return; }
+        const id = 'c_' + regNo.replace(/\W/g, '_');
+        batch[id] = { id, regNo, name, idLast4: String(row['身分證末四碼'] || '').trim(), phoneLast3: String(row['手機末三碼'] || '').trim(), dept: String(row['畢業系別'] || '').trim(), school: String(row['就讀學校'] || '').trim(), createdAt: Date.now() };
+        ok++;
+      });
+      db.ref('candidates').update(batch).then(() => {
+        const m = document.getElementById('import-msg');
+        m.style.display = 'block';
+        m.innerHTML = `<span style="color:var(--g)">✅ 成功匯入 ${ok} 位考生${skip ? `，略過 ${skip} 筆空白` : ''}</span>`;
+      });
+    } catch (err) {
+      const m = document.getElementById('import-msg');
+      m.style.display = 'block';
+      m.innerHTML = '<span style="color:var(--r)">❌ 讀取失敗，請確認 Excel 格式</span>';
     }
+  };
+  r.readAsArrayBuffer(file);
+}
+
+// Checkin QR
+function initCheckinQR() {
+  const url = location.origin + location.pathname.replace('index.html', '') + 'checkin.html';
+  document.getElementById('checkin-qr').innerHTML = '';
+  new QRCode(document.getElementById('checkin-qr'), { text: url, width: 180, height: 180, colorDark: '#000', colorLight: '#fff' });
+}
+function printCheckinQR() {
+  const url = location.origin + location.pathname.replace('index.html', '') + 'checkin.html';
+  const w = window.open('');
+  w.document.write(`<!DOCTYPE html><html><head><title>報到QR</title>
+  <style>body{font-family:sans-serif;text-align:center;padding:48px}h1{font-size:28px}p{color:#555;margin:12px 0 28px;font-size:16px}@media print{button{display:none}}</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head>
+  <body><h1>📋 考生報到</h1><p>請掃描 QR Code，輸入報名序號完成報到</p>
+  <div id="q" style="background:#fff;padding:16px;display:inline-block;border:2px solid #000;border-radius:8px"></div>
+  <br><br><button onclick="window.print()" style="padding:10px 28px;font-size:16px;cursor:pointer;margin-top:12px">🖨️ 列印</button>
+  <script>new QRCode(document.getElementById('q'),{text:'${url}',width:280,height:280})<\/script></body></html>`);
+}
+
+// Per-candidate QR
+function showQR(id) {
+  const c = candidates[id]; if (!c) return;
+  document.getElementById('qm-name').textContent = c.name;
+  document.getElementById('qm-info').textContent = '序號：' + c.regNo;
+  document.getElementById('qr-canvas').innerHTML = '';
+  const url = location.origin + location.pathname.replace('index.html', '') + 'scan.html?id=' + id;
+  new QRCode(document.getElementById('qr-canvas'), { text: url, width: 200, height: 200, colorDark: '#000', colorLight: '#fff' });
+  document.getElementById('qrModal').classList.add('show');
+}
+
+function exportCSV() {
+  const rows = [['序號', '姓名', '身分證末四碼', '手機末三碼', '畢業系別', '就讀學校', '報到', '面試平均', '術科平均', '指派教室']];
+  Object.values(candidates).sort((a, b) => String(a.regNo).localeCompare(String(b.regNo))).forEach(c => {
+    rows.push([c.regNo, c.name, c.idLast4, c.phoneLast3, c.dept, c.school, c.checkedIn ? '已報到' : '未報到', avg(c.interviewScores)?.toFixed(1) || '', avg(c.practicalScores)?.toFixed(1) || '', c.assignedRoom || '']);
   });
-  document.getElementById('batch-input').value='';
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(rows.map(r => r.join(',')).join('\n'));
+  a.download = '考生名單.csv'; a.click();
 }
-
-function deleteCandidate(id){
-  if(confirm('確定刪除此考生？'))db.ref('candidates/'+id).remove();
-}
-function clearAll(){
-  if(confirm('確定清除所有考生資料？此操作無法復原！')){
-    if(confirm('再次確認：清除所有資料？')){
-      db.ref('candidates').remove();
-    }
-  }
-}
-
-let qrInstance=null;
-function showQR(id){
-  const c=candidates[id];
-  if(!c)return;
-  document.getElementById('qr-name').textContent=c.name;
-  document.getElementById('qr-num').textContent='號碼：'+c.number;
-  document.getElementById('qr-canvas').innerHTML='';
-  const url=location.origin+location.pathname.replace('index.html','')+`scan.html?id=${id}`;
-  qrInstance=new QRCode(document.getElementById('qr-canvas'),{text:url,width:200,height:200,colorDark:'#000',colorLight:'#fff'});
-  document.getElementById('qr-modal').classList.add('show');
-}
-function closeQR(){document.getElementById('qr-modal').classList.remove('show')}
-
-function exportCSV(){
-  const rows=[['號碼','姓名','面試平均','術科平均','指派教室','面試老師','術科老師']];
-  Object.values(candidates).sort((a,b)=>a.number.localeCompare(b.number)).forEach(c=>{
-    const iv=avgScore(c.interviewScores), pr=avgScore(c.practicalScores);
-    const iTeachers=Object.keys(c.interviewScores||{}).join('/');
-    const pTeachers=Object.keys(c.practicalScores||{}).join('/');
-    rows.push([c.number,c.name,iv?.toFixed(1)||'',pr?.toFixed(1)||'',c.assignedRoom||'',iTeachers,pTeachers]);
-  });
-  const csv=rows.map(r=>r.join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download='成績總表.csv';a.click();
-}
-
-function printAll(){
-  const win=window.open('','_blank');
-  const items=Object.values(candidates).sort((a,b)=>a.number.localeCompare(b.number));
-  const base=location.origin+location.pathname.replace('index.html','')+'scan.html?id=';
-  win.document.write(`<!DOCTYPE html><html><head><title>QR列印</title>
-  <style>body{font-family:sans-serif}
-  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:16px}
-  .item{border:1px solid #ccc;border-radius:8px;padding:12px;text-align:center;page-break-inside:avoid}
-  h3{margin:8px 0 2px;font-size:16px}.sub{color:#666;font-size:13px}
-  @media print{button{display:none}}</style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
-  </head><body>
-  <button onclick="window.print()" style="margin:16px;padding:8px 20px">🖨️ 列印</button>
-  <div class="grid">${items.map(c=>`<div class="item"><div id="q${c.id}"></div><h3>${c.name}</h3><div class="sub">號碼：${c.number}</div></div>`).join('')}
-  </div>
-  <script>
-  ${items.map(c=>`new QRCode(document.getElementById('q${c.id}'),{text:'${base+c.id}',width:160,height:160})`).join(';')}
-  <\/script></body></html>`);
+function printAllQR() {
+  const base = location.origin + location.pathname.replace('index.html', '') + 'scan.html?id=';
+  const list = Object.values(candidates).sort((a, b) => String(a.regNo).localeCompare(String(b.regNo)));
+  const w = window.open('');
+  w.document.write(`<!DOCTYPE html><html><head><title>QR列印</title>
+  <style>body{font-family:sans-serif}.g{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px}.it{border:1px solid #ccc;border-radius:8px;padding:12px;text-align:center;page-break-inside:avoid}h3{margin:8px 0 2px;font-size:14px}.s{color:#666;font-size:11px}@media print{button{display:none}}</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head>
+  <body><button onclick="window.print()" style="margin:12px;padding:8px 20px;cursor:pointer">🖨️ 列印</button>
+  <div class="g">${list.map(c => `<div class="it"><div id="q${c.id}"></div><h3>${c.name}</h3><div class="s">${c.regNo}｜${c.school || ''}</div></div>`).join('')}</div>
+  <script>${list.map(c => `new QRCode(document.getElementById('q${c.id}'),{text:'${base + c.id}',width:150,height:150})`).join(';')}<\/script></body></html>`);
 }
 </script>
 </body>

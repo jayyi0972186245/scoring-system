@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>考生報到</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC',sans-serif;background:#f0f4ff;color:#1e293b;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#fff;border:1px solid #d0d9f0;border-radius:24px;padding:40px 32px;width:100%;max-width:420px;box-shadow:0 8px 40px rgba(59,110,245,.1)}
+.logo{text-align:center;font-size:52px;margin-bottom:10px}
+h1{text-align:center;font-size:22px;font-weight:700;color:#3b6ef5;margin-bottom:4px}
+.sub{text-align:center;color:#64748b;font-size:14px;margin-bottom:32px}
+.lbl{display:block;font-size:13px;color:#64748b;margin-bottom:6px}
+input{width:100%;border:1.5px solid #d0d9f0;border-radius:10px;padding:14px 16px;color:#1e293b;font-size:18px;font-family:inherit;outline:none;text-align:center;background:#fff;margin-bottom:12px}
+input:focus{border-color:#3b6ef5}
+.btn-search{width:100%;background:#3b6ef5;color:#fff;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.btn-search:hover{filter:brightness(1.08)}
+.btn-checkin{width:100%;background:#16a34a;color:#fff;border:none;border-radius:12px;padding:18px;font-size:18px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;margin-top:4px}
+.btn-checkin:hover{filter:brightness(1.08)}
+.btn-back{width:100%;background:transparent;border:1px solid #d0d9f0;border-radius:10px;padding:11px;font-size:14px;font-family:inherit;cursor:pointer;color:#64748b;margin-top:10px}
+.btn-back:hover{border-color:#3b6ef5;color:#3b6ef5}
+.err{color:#dc2626;font-size:13px;text-align:center;margin-bottom:10px;display:none}
+#step-confirm,#step-done{display:none}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.info-item{background:#f8faff;border:1px solid #d0d9f0;border-radius:10px;padding:12px}
+.info-item .il{font-size:11px;color:#64748b;margin-bottom:3px}
+.info-item .iv{font-size:16px;font-weight:600}
+.info-item.full{grid-column:1/-1}
+.done-icon{font-size:72px;text-align:center;margin-bottom:16px;animation:pop .4s ease}
+@keyframes pop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.done-name{font-size:24px;font-weight:700;color:#16a34a;text-align:center;margin-bottom:8px}
+.done-sub{color:#64748b;font-size:14px;text-align:center;margin-bottom:24px}
+.already-warn{background:#fef9ec;border:1px solid #fde68a;border-radius:10px;padding:14px;margin-bottom:16px;text-align:center;color:#92400e;font-size:14px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">📋</div>
+  <h1>考生報到</h1>
+  <p class="sub">請輸入您的報名序號</p>
+
+  <!-- 步驟一：輸入序號 -->
+  <div id="step-search">
+    <span class="lbl">報名序號</span>
+    <input type="text" id="reg-input" placeholder="請輸入報名序號" onkeydown="if(event.key==='Enter')doSearch()">
+    <div class="err" id="err-msg">找不到此序號，請確認後再試</div>
+    <button class="btn-search" onclick="doSearch()">查詢我的資料</button>
+  </div>
+
+  <!-- 步驟二：確認資料 -->
+  <div id="step-confirm">
+    <div id="already-warn" class="already-warn" style="display:none">⚠️ 您已完成報到，無需重複操作</div>
+    <div class="info-grid" id="info-grid"></div>
+    <button class="btn-checkin" id="checkin-btn" onclick="doCheckin()">✅ 確認以上資料，完成報到</button>
+    <button class="btn-back" onclick="goBack()">← 重新查詢</button>
+  </div>
+
+  <!-- 步驟三：完成 -->
+  <div id="step-done">
+    <div class="done-icon">🎉</div>
+    <div class="done-name" id="done-name">報到完成！</div>
+    <div class="done-sub">祝您考試順利 🍀</div>
+    <button class="btn-back" onclick="goBack()">返回</button>
+  </div>
+</div>
+
+<script>
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+let current = null;
+
+function doSearch() {
+  const q = document.getElementById('reg-input').value.trim();
+  if (!q) return;
+  document.getElementById('err-msg').style.display = 'none';
+  db.ref('candidates').orderByChild('regNo').equalTo(q).once('value').then(snap => {
+    const data = snap.val();
+    if (!data) { document.getElementById('err-msg').style.display = 'block'; return; }
+    current = Object.values(data)[0];
+    showConfirm();
+  });
+}
+
+function showConfirm() {
+  const c = current;
+  document.getElementById('step-search').style.display = 'none';
+  document.getElementById('step-confirm').style.display = 'block';
+  const alreadyWarn = document.getElementById('already-warn');
+  const checkinBtn = document.getElementById('checkin-btn');
+  alreadyWarn.style.display = c.checkedIn ? 'block' : 'none';
+  checkinBtn.style.display = c.checkedIn ? 'none' : 'block';
+  document.getElementById('info-grid').innerHTML = `
+    <div class="info-item full"><div class="il">姓名</div><div class="iv" style="font-size:22px">${c.name}</div></div>
+    <div class="info-item"><div class="il">報名序號</div><div class="iv">${c.regNo}</div></div>
+    <div class="info-item"><div class="il">身分證末四碼</div><div class="iv">${c.idLast4||'—'}</div></div>
+    <div class="info-item"><div class="il">手機末三碼</div><div class="iv">${c.phoneLast3||'—'}</div></div>
+  `;
+}
+
+function doCheckin() {
+  if (!current) return;
+  db.ref('candidates/' + current.id).update({
+    checkedIn: true, checkinTime: Date.now(), checkinMethod: 'self'
+  }).then(() => {
+    document.getElementById('step-confirm').style.display = 'none';
+    document.getElementById('step-done').style.display = 'block';
+    document.getElementById('done-name').textContent = current.name + '，報到完成！';
+  });
+}
+
+function goBack() {
+  current = null;
+  document.getElementById('step-search').style.display = 'block';
+  document.getElementById('step-confirm').style.display = 'none';
+  document.getElementById('step-done').style.display = 'none';
+  document.getElementById('reg-input').value = '';
+  document.getElementById('err-msg').style.display = 'none';
+}
+</script>
+</body>
+</html>
