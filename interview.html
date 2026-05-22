@@ -162,8 +162,7 @@ function buildCard(c) {
              <span style="color:var(--m);font-size:12px">0 – 100 分</span>
            </div>
            <button class="btn bg" onclick="save('${c.id}')" style="margin-top:10px">✓ 確認送出</button>`}
-      ${ps !== null ? `<div class="partner-box">👤 <strong style="color:var(--ac2)">${pn}</strong> 委員已評：${ps} 分</div>` : ''}
-      ${ms !== null && ps !== null ? `<div class="avg-box">📊 面試平均：<strong>${((ms + ps) / 2).toFixed(1)} 分</strong></div>` : ''}
+      ${ms !== null && ps !== null ? `<div class="avg-box">📊 兩位委員均已完成評分</div>` : (ms !== null ? `<div class="partner-box" style="color:var(--m)">等待另一位委員完成評分...</div>` : '')}
     </div>
   </div>`;
 }
