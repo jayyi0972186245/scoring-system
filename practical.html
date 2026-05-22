@@ -217,18 +217,17 @@ function initApp() {
   // Listen to this room's queue
   db.ref('practicalQueue/' + teacher.room).on('value', snap => {
     const newData = snap.val() || {};
-    // Track newly arrived candidates
-    Object.keys(newData).forEach(qid => {
-      if (!queue[qid]) newQids.add(qid);
+    Object.keys(newData).forEach(cid => {
+      if (!queue[cid]) newQids.add(cid);
     });
     queue = newData;
+    autoSelect(); // 先選，再渲染
     render();
-    // Auto-select newest unscored if nothing selected
-    if (!selQid) autoSelect();
   });
   // Listen to candidates (for score updates)
   db.ref('candidates').on('value', snap => {
     candidates = snap.val() || {};
+    autoSelect(); // 分數更新後重新判斷選誰
     render();
   });
 }
@@ -240,9 +239,19 @@ function myScore(candidateId) {
 
 function autoSelect() {
   const items = sortedQueue();
-  // 優先選最新未評的
   const unscored = items.filter(([cid]) => myScore(cid) === null);
-  if (unscored.length) selQid = unscored[unscored.length - 1][0];
+
+  if (!unscored.length) {
+    // 全部評完，清掉選取讓主畫面顯示完成訊息
+    selQid = null;
+    return;
+  }
+
+  // 如果目前選的考生還在未評清單裡，保持不動（避免老師打到一半被跳走）
+  if (selQid && unscored.find(([cid]) => cid === selQid)) return;
+
+  // 否則自動選最新進入的未評考生（時間最晚的）
+  selQid = unscored[unscored.length - 1][0];
 }
 
 function render() {
@@ -296,10 +305,11 @@ function renderQueue() {
   }
 }
 
-function selectQ(qid) {
-  selQid = qid;
-  newQids.delete(qid);
-  render();
+function selectQ(cid) {
+  selQid = cid;
+  newQids.delete(cid);
+  renderQueue();
+  renderMain();
 }
 
 function renderMain() {
