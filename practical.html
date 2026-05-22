@@ -246,9 +246,9 @@ function pickCurrent() {
   // If current selection is still valid and unscored → keep it
   if (selCid && queueData[selCid] && getMyScore(selCid) === null) return selCid;
 
-  // Find newest unscored
+  // Find oldest (first in) unscored
   const unscored = all.filter(([cid]) => getMyScore(cid) === null);
-  if (unscored.length) return unscored[unscored.length - 1][0];
+  if (unscored.length) return unscored[0][0];
 
   // All scored → keep selCid if valid, else null
   if (selCid && queueData[selCid]) return selCid;

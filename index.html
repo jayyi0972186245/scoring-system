@@ -426,8 +426,19 @@ function cancelCheckin(id, name) {
     db.ref('candidates/' + id).update({ checkedIn: false, checkinTime: null, checkinMethod: null });
   }
 }
-function delC(id) { if (confirm('確定刪除此考生？')) db.ref('candidates/' + id).remove(); }
-function clearAll() { if (confirm('確定清除所有考生？') && confirm('再次確認：清除全部資料？')) db.ref('candidates').remove(); }
+function delC(id) {
+  if (confirm('確定刪除此考生？')) {
+    db.ref('candidates/' + id).remove();
+    // 同時從所有教室佇列移除此考生
+    PRACTICAL_ROOMS.forEach(room => db.ref('practicalQueue/' + room + '/' + id).remove());
+  }
+}
+function clearAll() {
+  if (confirm('確定清除所有考生？') && confirm('再次確認：清除全部資料？')) {
+    db.ref('candidates').remove();
+    db.ref('practicalQueue').remove(); // 同時清除術科佇列
+  }
+}
 
 // Excel
 function onDrop(e) { e.preventDefault(); document.getElementById('dz').classList.remove('drag'); onFile(e.dataTransfer.files[0]); }
