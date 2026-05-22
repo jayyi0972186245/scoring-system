@@ -125,13 +125,11 @@ function logout() {
 }
 function setF(f, el) { filt = f; document.querySelectorAll('.ftab').forEach(t => t.classList.toggle('on', t === el)); render(); }
 function myScore(c) { return c.interviewScores?.[teacher.name] ?? null; }
-function partnerName() { return Object.values(TEACHERS).find(t => t.room === 'CM316' && t.type === 'interview' && t.name !== teacher.name)?.name || ''; }
-function partnerScore(c) { const p = partnerName(); return p ? (c.interviewScores?.[p] ?? null) : null; }
 
 function render() {
-  const q = (document.getElementById('search').value || '').toLowerCase();
+  const q = document.getElementById('search').value;
   let list = Object.values(candidates).filter(c => {
-    if (q && !c.name?.toLowerCase().includes(q) && !String(c.regNo || '').includes(q)) return false;
+    if (!matchSearch(c, q)) return false;
     if (filt === 'scored') return myScore(c) !== null;
     if (filt === 'unscored') return myScore(c) === null;
     return true;
@@ -143,7 +141,7 @@ function render() {
 }
 
 function buildCard(c) {
-  const ms = myScore(c), ps = partnerScore(c), pn = partnerName(), isActive = activeId === c.id;
+  const ms = myScore(c), isActive = activeId === c.id;
   return `<div class="cc${ms !== null ? ' scored' : ''}${isActive ? ' active' : ''}" onclick="toggle('${c.id}')">
     <div class="cc-head">
       <div>
@@ -162,7 +160,6 @@ function buildCard(c) {
              <span style="color:var(--m);font-size:12px">0 – 100 分</span>
            </div>
            <button class="btn bg" onclick="save('${c.id}')" style="margin-top:10px">✓ 確認送出</button>`}
-      ${ms !== null && ps !== null ? `<div class="avg-box">📊 兩位委員均已完成評分</div>` : (ms !== null ? `<div class="partner-box" style="color:var(--m)">等待另一位委員完成評分...</div>` : '')}
     </div>
   </div>`;
 }

@@ -112,9 +112,8 @@ function setF(f, el) { filt = f; document.querySelectorAll('.ftab').forEach(t =>
 function setSort(k) { if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = 1; } render(); }
 
 function render() {
-  const q = (document.getElementById('srch').value || '').toLowerCase();
   let list = Object.values(candidates).filter(c => {
-    if (q && !c.name?.toLowerCase().includes(q) && !String(c.regNo || '').includes(q)) return false;
+    if (!matchSearch(c, document.getElementById('srch').value)) return false;
     const st = status(c);
     if (filt !== 'all' && st !== filt) return false;
     return true;

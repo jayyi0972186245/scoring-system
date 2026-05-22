@@ -24,7 +24,23 @@ const TEACHERS = {
 
 const PRACTICAL_ROOMS = ["CM216", "CM214", "CM212"];
 
-// ===================== 導覽列 CSS =====================
+// ===================== 共用搜尋函式 =====================
+// 輸入純數字時：精確比對序號末三碼（002 只匹配末三碼恰為 002 的考生）
+// 輸入文字時：姓名模糊搜尋
+function matchSearch(c, q) {
+  if (!q) return true;
+  q = q.trim();
+  const nameMatch = (c.name || '').toLowerCase().includes(q.toLowerCase());
+  const regStr = String(c.regNo || '');
+  let regMatch = false;
+  if (/^\d+$/.test(q)) {
+    // 純數字：比對序號末N碼（N = 輸入長度），精確相等
+    regMatch = regStr.slice(-q.length) === q && regStr.length >= q.length;
+  } else {
+    regMatch = regStr.includes(q);
+  }
+  return nameMatch || regMatch;
+}
 const NAV_CSS = `
   .sys-nav{background:#010409;border-bottom:1px solid #21262d;position:sticky;top:0;z-index:999;font-family:'Noto Sans TC',sans-serif}
   .sys-nav-inner{max-width:1200px;margin:0 auto;padding:0 16px;display:flex;align-items:center;height:46px}

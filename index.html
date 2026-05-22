@@ -7,6 +7,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="firebase-config.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
@@ -27,6 +28,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 .bp{background:var(--ac);color:#000;width:100%;margin-top:12px;padding:11px}
 .bp:hover{filter:brightness(1.1)}
 .bg{background:var(--g);color:#fff}.bg:hover{filter:brightness(1.1)}
+.ba{background:var(--ac);color:#000}.ba:hover{filter:brightness(1.1)}
 .bo{background:transparent;border:1px solid var(--b);color:var(--m)}.bo:hover{border-color:var(--ac);color:var(--ac)}
 .br{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);color:var(--r)}.br:hover{background:rgba(248,81,73,.2)}
 .bsm{padding:5px 10px;font-size:11px}
@@ -124,7 +126,8 @@ tr:hover td{background:rgba(88,166,255,.025)}
     <!-- Tabs -->
     <div class="tabs">
       <div class="tab on" onclick="showTab('t-main',this)">👥 考生名單</div>
-      <div class="tab" onclick="showTab('t-staff',this)">👷 工作人員管理</div>
+      <div class="tab" onclick="showTab('t-staff-mgmt',this)">👷 工作人員管理</div>
+      <div class="tab" onclick="showTab('t-scan-tab',this)">📱 工作人員掃碼</div>
       <div class="tab" onclick="showTab('t-tools',this)">🛠️ 工具</div>
     </div>
 
@@ -192,8 +195,8 @@ tr:hover td{background:rgba(88,166,255,.025)}
     </div>
     </div><!-- /t-main -->
 
-    <!-- Tab: 工作人員 -->
-    <div class="pane" id="t-staff">
+    <!-- Tab: 工作人員管理 -->
+    <div class="pane" id="t-staff-mgmt">
       <div class="staff-grid">
         <!-- 新增工作人員 -->
         <div class="card">
@@ -226,7 +229,75 @@ tr:hover td{background:rgba(88,166,255,.025)}
           </div>
         </div>
       </div>
-    </div><!-- /t-staff -->
+    </div><!-- /t-staff-mgmt -->
+
+    <!-- Tab: 工作人員掃碼 -->
+    <div class="pane" id="t-scan-tab">
+      <div style="max-width:480px">
+        <!-- 登入區 -->
+        <div id="scan-login-box" class="card">
+          <div class="ch2">📱 工作人員掃碼登入</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">請輸入工作人員密碼登入，系統將鎖定您負責的教室</p>
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">工作人員密碼</label>
+          <input class="inp" type="password" id="scan-pw" placeholder="輸入工作人員密碼" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')scanLogin()">
+          <div id="scan-err" style="color:var(--r);font-size:12px;margin-bottom:8px;display:none">密碼錯誤，請向管理員確認</div>
+          <button class="btn bg" style="width:100%" onclick="scanLogin()">登入掃碼頁面</button>
+        </div>
+
+        <!-- 掃碼操作區（登入後顯示）-->
+        <div id="scan-app-box" style="display:none">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div>
+                <div style="font-size:15px;font-weight:700;color:var(--ac2)" id="scan-room-label">—</div>
+                <div style="font-size:12px;color:var(--m)" id="scan-staff-label">—</div>
+              </div>
+              <button class="btn bo bsm" onclick="scanLogout()">登出</button>
+            </div>
+
+            <!-- Mode tabs -->
+            <div style="display:flex;gap:6px;margin-bottom:14px">
+              <div class="ftab on" id="stab-cam" onclick="switchScanMode('camera',this)">📷 鏡頭掃描</div>
+              <div class="ftab" id="stab-man" onclick="switchScanMode('manual',this)">⌨️ 手動輸入</div>
+            </div>
+
+            <div id="scan-mode-camera">
+              <div id="tab-reader" style="border-radius:10px;overflow:hidden"></div>
+              <button class="btn ba" id="tab-start-btn" style="width:100%;margin-top:10px" onclick="tabStartScan()">▶ 開始掃描</button>
+              <button class="btn bo" id="tab-stop-btn" style="width:100%;margin-top:6px;display:none" onclick="tabStopScan()">■ 停止</button>
+            </div>
+            <div id="scan-mode-manual" style="display:none">
+              <p style="font-size:12px;color:var(--m);margin-bottom:8px">貼上考生ID（scan.html?id= 後面的部分）</p>
+              <div style="display:flex;gap:8px">
+                <input class="inp" id="tab-manual-id" placeholder="考生 ID" style="flex:1">
+                <button class="btn ba bsm" onclick="tabProcessManual()">送出</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result -->
+          <div id="tab-result" class="card" style="display:none;text-align:center;border-color:var(--g)">
+            <div style="font-size:11px;font-weight:700;color:var(--g);margin-bottom:6px" id="tab-r-status">✅ 指派成功</div>
+            <div style="font-size:22px;font-weight:700;margin-bottom:4px" id="tab-r-name">—</div>
+            <div style="color:var(--m);font-size:13px;margin-bottom:10px" id="tab-r-no">—</div>
+            <div style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);border-radius:10px;padding:10px;margin-bottom:8px">
+              <div style="font-size:11px;color:var(--m);margin-bottom:2px">指派至教室</div>
+              <div style="font-size:32px;font-weight:700;color:var(--g);font-family:monospace" id="tab-r-room">—</div>
+              <div style="font-size:13px;color:var(--ac2)" id="tab-r-teachers">—</div>
+            </div>
+            <div style="font-size:12px;color:var(--m);white-space:pre-line" id="tab-r-info"></div>
+            <div style="font-size:12px;color:var(--g);margin-top:8px" id="tab-r-msg"></div>
+            <button onclick="tabResetResult()" class="btn bo" style="width:100%;margin-top:12px">繼續掃下一位 →</button>
+          </div>
+
+          <!-- History -->
+          <div class="card">
+            <div class="ch2">📋 本次指派記錄</div>
+            <div id="tab-hist"><p style="color:var(--m);font-size:12px;text-align:center;padding:8px">尚無記錄</p></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /t-scan-tab -->
 
     <!-- Tab: 工具 -->
     <div class="pane" id="t-tools">
@@ -313,9 +384,8 @@ function setFilt(f, el) {
 }
 
 function renderTable() {
-  const q = (document.getElementById('srch').value || '').toLowerCase();
   let list = Object.values(candidates).filter(c => {
-    if (q && !c.name?.toLowerCase().includes(q) && !String(c.regNo || '').includes(q) && !c.school?.toLowerCase().includes(q)) return false;
+    if (!matchSearch(c, document.getElementById('srch').value)) return false;
     if (filt === 'checkedin') return !!c.checkedIn;
     if (filt === 'not') return !c.checkedIn;
     if (filt === 'done') return avg(c.interviewScores) !== null && avg(c.practicalScores) !== null;
@@ -489,6 +559,108 @@ function printAllQR() {
   <body><button onclick="window.print()" style="margin:12px;padding:8px 20px;cursor:pointer">🖨️ 列印</button>
   <div class="g">${list.map(c => `<div class="it"><div id="q${c.id}"></div><h3>${c.name}</h3><div class="s">${c.regNo}｜${c.school || ''}</div></div>`).join('')}</div>
   <script>${list.map(c => `new QRCode(document.getElementById('q${c.id}'),{text:'${base + c.id}',width:150,height:150})`).join(';')}<\/script></body></html>`);
+}// ── 掃碼分頁 ──────────────────────────────────────
+let scanRoom = '', scanName = '', tabScanner = null, tabHist = [];
+
+function scanLogin() {
+  const pw = document.getElementById('scan-pw').value.trim();
+  document.getElementById('scan-err').style.display = 'none';
+  db.ref('staff').orderByChild('password').equalTo(pw).once('value').then(snap => {
+    const data = snap.val();
+    if (!data) { document.getElementById('scan-err').style.display = 'block'; return; }
+    const staff = Object.values(data)[0];
+    scanRoom = staff.room; scanName = staff.name;
+    document.getElementById('scan-login-box').style.display = 'none';
+    document.getElementById('scan-app-box').style.display = 'block';
+    document.getElementById('scan-room-label').textContent = '📍 ' + scanRoom;
+    document.getElementById('scan-staff-label').textContent = scanName + ' 工作人員';
+  }).catch(() => { document.getElementById('scan-err').style.display = 'block'; });
+}
+
+function scanLogout() {
+  scanRoom = ''; scanName = ''; tabHist = [];
+  if (tabScanner) tabStopScan();
+  document.getElementById('scan-login-box').style.display = 'block';
+  document.getElementById('scan-app-box').style.display = 'none';
+  document.getElementById('scan-pw').value = '';
+  document.getElementById('tab-result').style.display = 'none';
+  document.getElementById('tab-hist').innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:8px">尚無記錄</p>';
+}
+
+function switchScanMode(m, el) {
+  document.querySelectorAll('#t-scan-tab .ftab').forEach(t => t.classList.toggle('on', t === el));
+  document.getElementById('scan-mode-camera').style.display = m === 'camera' ? 'block' : 'none';
+  document.getElementById('scan-mode-manual').style.display = m === 'manual' ? 'block' : 'none';
+  if (m !== 'camera' && tabScanner) tabStopScan();
+}
+
+function tabStartScan() {
+  document.getElementById('tab-start-btn').style.display = 'none';
+  document.getElementById('tab-stop-btn').style.display = 'block';
+  tabScanner = new Html5Qrcode('tab-reader');
+  tabScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 220, height: 220 } }, url => {
+    tabStopScan();
+    try { const id = new URL(url).searchParams.get('id'); if (id) tabProcessCandidate(id); else alert('QR碼無效'); }
+    catch (e) { alert('QR碼格式錯誤'); }
+  }, () => {});
+}
+
+function tabStopScan() {
+  if (tabScanner) tabScanner.stop().catch(() => {});
+  tabScanner = null;
+  document.getElementById('tab-start-btn').style.display = 'block';
+  document.getElementById('tab-stop-btn').style.display = 'none';
+}
+
+function tabProcessManual() {
+  const id = document.getElementById('tab-manual-id').value.trim();
+  if (id) tabProcessCandidate(id);
+}
+
+function tabProcessCandidate(id) {
+  if (!scanRoom) { alert('請先登入'); return; }
+  db.ref('candidates/' + id).once('value').then(snap => {
+    const c = snap.val();
+    if (!c) { alert('找不到此考生'); return; }
+    const prevRoom = c.assignedRoom || null;
+    if (prevRoom && prevRoom !== scanRoom) {
+      if (!confirm(`⚠️ 此考生（${c.name}）已指派到 ${prevRoom}。\n確定改為 ${scanRoom} 嗎？`)) return;
+      db.ref('practicalQueue/' + prevRoom + '/' + id).remove();
+      db.ref('candidates/' + id + '/practicalScores').remove();
+    }
+    const isDup = prevRoom === scanRoom;
+    db.ref('candidates/' + id).update({ assignedRoom: scanRoom, assignedAt: Date.now() });
+    db.ref('practicalQueue/' + scanRoom + '/' + id).set({
+      candidateId: id, name: c.name, school: c.school || '',
+      dept: c.dept || '', regNo: c.regNo, assignedAt: Date.now(), scannedBy: scanName
+    });
+    const teachers = Object.values(TEACHERS).filter(t => t.room === scanRoom && t.type === 'practical');
+    const res = document.getElementById('tab-result');
+    document.getElementById('tab-r-status').textContent = isDup ? '⚠️ 重複掃碼' : '✅ 指派成功';
+    document.getElementById('tab-r-status').style.color = isDup ? 'var(--y)' : 'var(--g)';
+    document.getElementById('tab-r-name').textContent = c.name;
+    document.getElementById('tab-r-no').textContent = '序號：' + c.regNo;
+    document.getElementById('tab-r-room').textContent = scanRoom;
+    document.getElementById('tab-r-teachers').textContent = '👩‍🏫 ' + teachers.map(t => t.name).join('、');
+    document.getElementById('tab-r-info').textContent = (c.school ? '🏫 ' + c.school : '') + (c.dept ? '\n📚 ' + c.dept : '');
+    document.getElementById('tab-r-msg').textContent = isDup ? '已在此教室，老師畫面已更新' : '老師評分頁面已自動出現此考生';
+    res.style.display = 'block';
+    tabHist.unshift({ name: c.name, regNo: c.regNo, time: new Date().toLocaleTimeString(), isDup });
+    if (tabHist.length > 8) tabHist.pop();
+    tabRenderHist();
+    document.getElementById('tab-manual-id').value = '';
+  }).catch(() => alert('連線失敗'));
+}
+
+function tabResetResult() { document.getElementById('tab-result').style.display = 'none'; }
+
+function tabRenderHist() {
+  const el = document.getElementById('tab-hist');
+  if (!tabHist.length) { el.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:8px">尚無記錄</p>'; return; }
+  el.innerHTML = tabHist.map(h => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--s2);border-radius:8px;margin-top:5px;font-size:12px">
+    <span><strong>${h.name}</strong> <span style="color:var(--m)">${h.regNo}</span>${h.isDup ? '<span style="font-size:10px;background:rgba(227,179,65,.15);color:var(--y);border-radius:4px;padding:1px 5px;margin-left:4px">重複</span>' : ''}</span>
+    <span style="color:var(--ac2);font-weight:700;font-size:11px">${scanRoom} <span style="color:var(--m);font-weight:400">${h.time}</span></span>
+  </div>`).join('');
 }
 </script>
 </body>
