@@ -32,9 +32,17 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 .sb-header{padding:14px 14px 10px;border-bottom:1px solid var(--b);flex-shrink:0}
 .sb-title{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.1em;font-weight:500;margin-bottom:2px}
 .sb-room{font-size:14px;font-weight:700;color:var(--ac2)}
-.sb-scroll{flex:1;overflow-y:auto;padding:10px}
-.sb-scroll::-webkit-scrollbar{width:4px}
-.sb-scroll::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px}
+/* Two-section layout */
+.sb-section{display:flex;flex-direction:column;flex:1;overflow:hidden;min-height:0}
+.sb-section:first-of-type{flex:1.2}
+.sb-section:last-of-type{flex:1}
+.sb-sec-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:8px 14px 4px;flex-shrink:0}
+#sb-label-wait{color:var(--y)}
+#sb-label-done{color:var(--g)}
+.sb-section > div:last-child{flex:1;overflow-y:auto;padding:4px 10px 10px;scrollbar-width:thin;scrollbar-color:var(--b) transparent}
+.sb-section > div:last-child::-webkit-scrollbar{width:4px}
+.sb-section > div:last-child::-webkit-scrollbar-thumb{background:var(--b);border-radius:2px}
+.sb-divider{height:1px;background:var(--b);flex-shrink:0;margin:0}
 
 /* ── Queue items ── */
 .qi{border-radius:10px;padding:10px 12px;margin-bottom:6px;cursor:pointer;border:2px solid transparent;transition:.12s}
@@ -147,8 +155,21 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
         <div class="sb-title">候考佇列</div>
         <div class="sb-room" id="sb-room">—</div>
       </div>
-      <div class="sb-scroll" id="queue-list">
-        <p style="color:var(--m);font-size:12px;text-align:center;padding:24px 0">等待考生進入...</p>
+      <!-- 上欄：等待評分 -->
+      <div class="sb-section">
+        <div class="sb-sec-label" id="sb-label-wait">⏳ 等待評分</div>
+        <div id="queue-waiting">
+          <p style="color:var(--m);font-size:12px;text-align:center;padding:16px 0">等待考生進入...</p>
+        </div>
+      </div>
+      <!-- 分隔線 -->
+      <div class="sb-divider"></div>
+      <!-- 下欄：已完成 -->
+      <div class="sb-section">
+        <div class="sb-sec-label" id="sb-label-done">✅ 已完成評分</div>
+        <div id="queue-done">
+          <p style="color:var(--m);font-size:12px;text-align:center;padding:16px 0">尚無已完成考生</p>
+        </div>
       </div>
     </div>
 
@@ -218,22 +239,10 @@ function myScore(candidateId) {
 }
 
 function autoSelect() {
-  // Find first unscored in queue
-  const items = sortedQueue();
-  const first = items.find(([, item]) => myScore(item.candidateId) === null);
-  if (first) selQid = first[0];
-}
-
-function sortedQueue() {
-  // queue key = candidateId，直接用 entries
-  return Object.entries(queue).sort((a, b) => a[1].assignedAt - b[1].assignedAt);
-}
-
-function autoSelect() {
   const items = sortedQueue();
   // 優先選最新未評的
   const unscored = items.filter(([cid]) => myScore(cid) === null);
-  if (unscored.length) selQid = unscored[unscored.length - 1][0]; // 最新一筆
+  if (unscored.length) selQid = unscored[unscored.length - 1][0];
 }
 
 function render() {
@@ -242,25 +251,49 @@ function render() {
 }
 
 function renderQueue() {
-  const el = document.getElementById('queue-list');
+  const waitEl = document.getElementById('queue-waiting');
+  const doneEl = document.getElementById('queue-done');
   const items = sortedQueue();
-  if (!items.length) {
-    el.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:24px 0">等待考生進入...</p>';
-    return;
+
+  const waitItems = items.filter(([cid]) => myScore(cid) === null);
+  const doneItems = items.filter(([cid]) => myScore(cid) !== null);
+
+  // 更新標題計數
+  document.getElementById('sb-label-wait').textContent =
+    `⏳ 等待評分${waitItems.length ? '（' + waitItems.length + '）' : ''}`;
+  document.getElementById('sb-label-done').textContent =
+    `✅ 已完成${doneItems.length ? '（' + doneItems.length + '）' : ''}`;
+
+  // ── 上欄：等待評分 ──
+  if (!waitItems.length) {
+    waitEl.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:16px 0">無等待中考生</p>';
+  } else {
+    waitEl.innerHTML = waitItems.map(([cid, item]) => {
+      const isCur = cid === selQid;
+      const isNew = newQids.has(cid);
+      return `<div class="qi ${isCur ? 'cur' : 'wait'}${isNew ? ' qi-new' : ''}" onclick="selectQ('${cid}')">
+        <span class="qi-badge">${isCur ? '▶ 目前' : '等候中'}</span>
+        <div class="qi-name">${item.name}</div>
+        <div class="qi-school">${item.school || ''}${item.dept ? '\n' + item.dept : ''}</div>
+      </div>`;
+    }).join('');
   }
-  el.innerHTML = items.map(([cid, item]) => {
-    const done = myScore(cid) !== null;
-    const isCur = cid === selQid;
-    const isNew = newQids.has(cid) && !done;
-    const cls = done ? 'done' : isCur ? 'cur' : 'wait';
-    const badge = done ? '已完成' : isCur ? '▶ 目前' : '等候中';
-    return `<div class="qi ${cls}${isNew ? ' qi-new' : ''}" onclick="selectQ('${cid}')">
-      <span class="qi-badge">${badge}</span>
-      <div class="qi-name">${item.name}</div>
-      <div class="qi-school">${item.school || ''}${item.dept ? '\n' + item.dept : ''}</div>
-      ${done ? `<div class="qi-score">✓ 已評：${myScore(cid)}分</div>` : ''}
-    </div>`;
-  }).join('');
+
+  // ── 下欄：已完成 ──
+  if (!doneItems.length) {
+    doneEl.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:16px 0">尚無已完成考生</p>';
+  } else {
+    // 已完成的反序顯示（最新完成的在最上面）
+    doneEl.innerHTML = [...doneItems].reverse().map(([cid, item]) => {
+      const isCur = cid === selQid;
+      return `<div class="qi done${isCur ? ' cur' : ''}" onclick="selectQ('${cid}')">
+        <span class="qi-badge">已完成</span>
+        <div class="qi-name">${item.name}</div>
+        <div class="qi-school">${item.school || ''}${item.dept ? '\n' + item.dept : ''}</div>
+        <div class="qi-score">✓ 已評：${myScore(cid)}分</div>
+      </div>`;
+    }).join('');
+  }
 }
 
 function selectQ(qid) {
