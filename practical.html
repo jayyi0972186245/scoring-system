@@ -214,21 +214,28 @@ function doLogout() {
 }
 
 function initApp() {
-  // Listen to this room's queue
+  let queueReady = false, candidatesReady = false;
+
+  function tryRender() {
+    if (!queueReady || !candidatesReady) return; // 等兩個都準備好
+    autoSelect();
+    render();
+  }
+
   db.ref('practicalQueue/' + teacher.room).on('value', snap => {
     const newData = snap.val() || {};
     Object.keys(newData).forEach(cid => {
       if (!queue[cid]) newQids.add(cid);
     });
     queue = newData;
-    autoSelect(); // 先選，再渲染
-    render();
+    queueReady = true;
+    tryRender();
   });
-  // Listen to candidates (for score updates)
+
   db.ref('candidates').on('value', snap => {
     candidates = snap.val() || {};
-    autoSelect(); // 分數更新後重新判斷選誰
-    render();
+    candidatesReady = true;
+    tryRender();
   });
 }
 
