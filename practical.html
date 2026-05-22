@@ -212,8 +212,9 @@ function initApp() {
   });
 }
 
-function myScore(cid) {
-  return candidates[cid]?.practicalScores?.[teacher.name] ?? null;
+function myScore(candidateId) {
+  // candidateId 直接就是 queue 的 key，也對應 candidates 的 key
+  return candidates[candidateId]?.practicalScores?.[teacher.name] ?? null;
 }
 
 function autoSelect() {
@@ -224,7 +225,15 @@ function autoSelect() {
 }
 
 function sortedQueue() {
+  // queue key = candidateId，直接用 entries
   return Object.entries(queue).sort((a, b) => a[1].assignedAt - b[1].assignedAt);
+}
+
+function autoSelect() {
+  const items = sortedQueue();
+  // 優先選最新未評的
+  const unscored = items.filter(([cid]) => myScore(cid) === null);
+  if (unscored.length) selQid = unscored[unscored.length - 1][0]; // 最新一筆
 }
 
 function render() {
@@ -239,17 +248,17 @@ function renderQueue() {
     el.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:24px 0">等待考生進入...</p>';
     return;
   }
-  el.innerHTML = items.map(([qid, item]) => {
-    const done = myScore(item.candidateId) !== null;
-    const isCur = qid === selQid;
-    const isNew = newQids.has(qid) && !done;
+  el.innerHTML = items.map(([cid, item]) => {
+    const done = myScore(cid) !== null;
+    const isCur = cid === selQid;
+    const isNew = newQids.has(cid) && !done;
     const cls = done ? 'done' : isCur ? 'cur' : 'wait';
     const badge = done ? '已完成' : isCur ? '▶ 目前' : '等候中';
-    return `<div class="qi ${cls}${isNew ? ' qi-new' : ''}" onclick="selectQ('${qid}')">
+    return `<div class="qi ${cls}${isNew ? ' qi-new' : ''}" onclick="selectQ('${cid}')">
       <span class="qi-badge">${badge}</span>
       <div class="qi-name">${item.name}</div>
       <div class="qi-school">${item.school || ''}${item.dept ? '\n' + item.dept : ''}</div>
-      ${done ? `<div class="qi-score">✓ 已評分：${myScore(item.candidateId)}分</div>` : ''}
+      ${done ? `<div class="qi-score">✓ 已評：${myScore(cid)}分</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -264,80 +273,57 @@ function renderMain() {
   const el = document.getElementById('main-panel');
   if (!selQid || !queue[selQid]) {
     const items = sortedQueue();
-    if (items.length && items.every(([, item]) => myScore(item.candidateId) !== null)) {
-      el.innerHTML = `<div class="wait-card">
-        <div class="ico">✅</div>
+    if (items.length && items.every(([cid]) => myScore(cid) !== null)) {
+      el.innerHTML = `<div class="wait-card"><div class="ico">✅</div>
         <p style="color:var(--g);font-weight:600;font-size:16px">本場次全部評分完成！</p>
-        <p style="margin-top:10px">等待下一位考生進入...</p>
-      </div>`;
+        <p style="margin-top:10px">等待下一位考生進入...</p></div>`;
     } else {
-      el.innerHTML = `<div class="wait-card">
-        <div class="ico">⏳</div>
-        <p>等待考生進入<br>工作人員在門口掃描考生QR碼後<br>考生資訊將自動顯示在左側佇列</p>
-      </div>`;
+      el.innerHTML = `<div class="wait-card"><div class="ico">⏳</div>
+        <p>等待考生進入<br>工作人員在門口掃描考生QR碼後<br>考生資訊將自動顯示在左側</p></div>`;
     }
     return;
   }
 
-  const item = queue[selQid];
-  const ms = myScore(item.candidateId);
-  const c = candidates[item.candidateId] || {};
+  const cid = selQid; // queue key = candidateId
+  const item = queue[cid];
+  const ms = myScore(cid);
 
-  // ── 尚未評分 ──
   if (ms === null) {
     el.innerHTML = `
       <div class="sc active-glow">
         <div class="cand-lbl">🟢 目前評分考生</div>
         <div class="cand-name">${item.name}</div>
         <div class="cand-no">序號：${item.regNo}</div>
-
         <div class="info-chips">
-          <div class="chip" style="flex:1">
-            <span class="cl">就讀學校</span>
-            <span class="cv">${item.school || '—'}</span>
-          </div>
-          <div class="chip" style="flex:1">
-            <span class="cl">畢業系別</span>
-            <span class="cv">${item.dept || '—'}</span>
-          </div>
+          <div class="chip" style="flex:1"><span class="cl">就讀學校</span><span class="cv">${item.school || '—'}</span></div>
+          <div class="chip" style="flex:1"><span class="cl">畢業系別</span><span class="cv">${item.dept || '—'}</span></div>
         </div>
-
         <div class="score-area">
           <p>請輸入術科分數（0 – 100）</p>
           <div class="score-row">
             <input type="number" class="snum" id="sinp" min="0" max="100" placeholder="—"
-              onkeydown="if(event.key==='Enter')saveScore('${item.candidateId}')">
+              onkeydown="if(event.key==='Enter')saveScore('${cid}')">
             <span class="snum-hint">0 – 100 分</span>
           </div>
         </div>
-        <button class="btn-submit" onclick="saveScore('${item.candidateId}')">✓ 確認送出分數</button>
+        <button class="btn-submit" onclick="saveScore('${cid}')">✓ 確認送出分數</button>
       </div>`;
     setTimeout(() => { const inp = document.getElementById('sinp'); if (inp) inp.focus(); }, 60);
-
-  // ── 已評分 ──
   } else {
     el.innerHTML = `
       <div class="sc">
         <div class="cand-lbl" style="color:var(--g)">✅ 已完成評分</div>
         <div class="cand-name">${item.name}</div>
         <div class="cand-no">序號：${item.regNo}</div>
-
         <div class="info-chips">
-          <div class="chip" style="flex:1">
-            <span class="cl">就讀學校</span>
-            <span class="cv">${item.school || '—'}</span>
-          </div>
-          <div class="chip" style="flex:1">
-            <span class="cl">畢業系別</span>
-            <span class="cv">${item.dept || '—'}</span>
-          </div>
+          <div class="chip" style="flex:1"><span class="cl">就讀學校</span><span class="cv">${item.school || '—'}</span></div>
+          <div class="chip" style="flex:1"><span class="cl">畢業系別</span><span class="cv">${item.dept || '—'}</span></div>
         </div>
-
         <div class="scored-box">
           <span class="scored-lbl">您的評分</span>
           <span class="scored-val">${ms} 分</span>
         </div>
-        <button class="btn-edit" onclick="editScore('${item.candidateId}')">修改分數</button>
+        <button class="btn-edit" onclick="editScore('${cid}')">修改分數</button>
       </div>
       <div class="sc" style="text-align:center;padding:28px;color:var(--m);font-size:13px">
         點擊左側佇列切換其他考生，或等待下一位進入

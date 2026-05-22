@@ -15,126 +15,120 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 </style>
 <style id="nav-css"></style>
 <style>
-/* Login */
 .lw{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .lc{background:var(--s);border:1px solid var(--b);border-radius:20px;padding:36px 28px;width:100%;max-width:380px;text-align:center}
 .lc .ico{font-size:48px;margin-bottom:12px}
 .lc h1{font-size:20px;font-weight:700;color:var(--ac);margin-bottom:6px}
 .lc p{color:var(--m);font-size:13px;margin-bottom:22px;line-height:1.6}
-.inp{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:11px 14px;color:var(--t);font-size:15px;font-family:inherit;outline:none;text-align:center;letter-spacing:.15em}
-.inp:focus{border-color:var(--ac)}
-.btn{cursor:pointer;font-family:inherit;font-weight:600;border:none;border-radius:10px;padding:12px;font-size:14px;transition:.12s;width:100%;margin-top:10px}
-.bp{background:var(--ac);color:#000}.bp:hover{filter:brightness(1.1)}
-.bo{background:transparent;border:1px solid var(--b);color:var(--m)}.bo:hover{border-color:var(--ac);color:var(--ac)}
+.pw-inp{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:11px 14px;color:var(--t);font-size:15px;font-family:inherit;outline:none;text-align:center;letter-spacing:.15em}
+.pw-inp:focus{border-color:var(--ac)}
+.btn-login{width:100%;background:var(--ac);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px;transition:.12s}
+.btn-login:hover{filter:brightness(1.1)}
 .err{color:var(--r);font-size:12px;margin-top:8px;display:none}
 
-/* App */
 .wrap{max-width:480px;margin:0 auto;padding:16px}
-.room-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(188,140,255,.12);border:1px solid rgba(188,140,255,.3);color:var(--ac2);border-radius:20px;padding:6px 16px;font-size:14px;font-weight:700;margin-bottom:4px}
-.room-badge .dot{width:8px;height:8px;border-radius:50%;background:var(--g);animation:pulse 2s infinite}
+.toprow{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.room-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(188,140,255,.12);border:1px solid rgba(188,140,255,.3);color:var(--ac2);border-radius:20px;padding:6px 16px;font-size:14px;font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--g);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.staff-name{font-size:12px;color:var(--m);margin-bottom:16px}
-
 .card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:18px;margin-bottom:12px}
 .ch2{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
-
-/* Mode tabs */
 .mtabs{display:flex;gap:6px;margin-bottom:14px}
 .mtab{flex:1;padding:9px;border-radius:8px;background:var(--s2);border:1px solid var(--b);color:var(--m);cursor:pointer;text-align:center;font-size:12px;font-weight:500;transition:.12s}
 .mtab.on{background:var(--ac);color:#000;border-color:var(--ac)}
-
 #reader{border-radius:10px;overflow:hidden}
 .scan-btn{width:100%;margin-top:10px;cursor:pointer;font-family:inherit;font-weight:700;border:none;border-radius:10px;padding:12px;font-size:14px;background:var(--ac);color:#000;transition:.12s}
 .scan-btn:hover{filter:brightness(1.1)}
 .stop-btn{width:100%;margin-top:6px;cursor:pointer;font-family:inherit;font-weight:500;border:1px solid var(--b);border-radius:10px;padding:9px;font-size:13px;background:transparent;color:var(--m)}
-
 .manual-row{display:flex;gap:8px;margin-top:10px}
 .manual-inp{flex:1;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:9px 12px;color:var(--t);font-size:13px;font-family:inherit;outline:none}
 .manual-inp:focus{border-color:var(--ac)}
 .manual-btn{background:var(--ac);color:#000;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 
 /* Result */
-.result{background:var(--s2);border:2px solid var(--g);border-radius:14px;padding:20px;text-align:center;display:none}
+.result{display:none;background:var(--s2);border-radius:14px;padding:20px;margin-bottom:12px;text-align:center}
 .result.show{display:block}
+.result.ok{border:2px solid var(--g)}
+.result.dup{border:2px solid var(--y)}
+.result.warn{border:2px solid var(--r)}
+.r-status{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
 .r-name{font-size:24px;font-weight:700;margin-bottom:4px}
 .r-no{color:var(--m);font-size:13px;margin-bottom:12px}
-.r-room-box{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.25);border-radius:10px;padding:12px;margin-bottom:10px}
-.r-room{font-size:38px;font-weight:700;color:var(--g);font-family:monospace}
+.r-room-box{background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);border-radius:10px;padding:10px;margin-bottom:10px}
+.r-room{font-size:36px;font-weight:700;color:var(--g);font-family:monospace}
 .r-teachers{font-size:13px;color:var(--ac2);margin-top:4px}
-.r-info{font-size:12px;color:var(--m);margin-top:6px;line-height:1.5}
-.r-already{background:rgba(227,179,65,.08);border:1px solid rgba(227,179,65,.25);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--y);display:inline-block;margin-bottom:8px}
+.r-info{font-size:12px;color:var(--m);margin-top:6px;white-space:pre-line;line-height:1.6}
+.r-msg{font-size:12px;margin-top:8px;padding:8px 12px;border-radius:8px}
+.r-msg.ok{background:rgba(63,185,80,.1);color:var(--g)}
+.r-msg.warn{background:rgba(227,179,65,.1);color:var(--y)}
+.next-btn{width:100%;margin-top:12px;background:var(--s);border:1px solid var(--b);color:var(--t);border-radius:10px;padding:10px;font-size:13px;cursor:pointer;font-family:inherit}
 
 /* History */
 .hi{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--s2);border-radius:8px;margin-top:6px;font-size:12px}
 .hi-room{font-weight:700;color:var(--ac2);font-size:11px}
+.hi-dup{font-size:10px;background:rgba(227,179,65,.15);color:var(--y);border-radius:4px;padding:1px 5px;margin-left:4px}
 </style>
 </head>
 <body>
 
-<!-- Login -->
 <div class="lw" id="LP">
   <div class="lc">
     <div class="ico">📱</div>
     <h1>工作人員掃碼</h1>
     <p>術科考場門口專用<br>請輸入您的工作人員密碼</p>
-    <input class="inp" type="password" id="pw" placeholder="輸入工作人員密碼" onkeydown="if(event.key==='Enter')doLogin()">
+    <input class="pw-inp" type="password" id="pw" placeholder="輸入工作人員密碼" onkeydown="if(event.key==='Enter')doLogin()">
     <div class="err" id="err-login">密碼錯誤，請向管理員確認</div>
-    <button class="btn bp" onclick="doLogin()">登入</button>
+    <button class="btn-login" onclick="doLogin()">登入</button>
     <a href="index.html" style="display:block;margin-top:14px;font-size:12px;color:var(--m);text-decoration:none">← 返回管理後台</a>
   </div>
 </div>
 
-<!-- App -->
 <div id="APP" style="display:none">
   <div id="NAV"></div>
   <div class="wrap">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+    <div class="toprow">
       <div>
-        <div class="room-badge"><span class="dot"></span><span id="room-label">CM216</span></div>
-        <div class="staff-name" id="staff-name-label">—</div>
+        <div class="room-badge"><span class="dot"></span><span id="room-label">—</span></div>
+        <div style="font-size:12px;color:var(--m);margin-top:6px" id="staff-label">—</div>
       </div>
       <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit">登出</button>
     </div>
 
-    <!-- Scanner -->
     <div class="card">
       <div class="ch2">📷 掃描考生 QR Code</div>
       <div class="mtabs">
         <div class="mtab on" onclick="switchMode('camera',this)">📷 鏡頭掃描</div>
         <div class="mtab" onclick="switchMode('manual',this)">⌨️ 手動輸入</div>
       </div>
-
       <div id="mode-camera">
         <div id="reader"></div>
         <button class="scan-btn" id="start-btn" onclick="startScan()">▶ 開始掃描</button>
         <button class="stop-btn" id="stop-btn" style="display:none" onclick="stopScan()">■ 停止掃描</button>
       </div>
-
       <div id="mode-manual" style="display:none">
-        <p style="font-size:12px;color:var(--m);margin-bottom:8px">貼上 scan.html?id= 後面的考生ID</p>
+        <p style="font-size:12px;color:var(--m);margin-bottom:8px">貼上 scan.html?id= 後的考生ID</p>
         <div class="manual-row">
-          <input class="manual-inp" type="text" id="manual-id" placeholder="考生 ID">
-          <button class="manual-btn" onclick="processManual()">指派</button>
+          <input class="manual-inp" id="manual-id" placeholder="考生 ID">
+          <button class="manual-btn" onclick="processManual()">送出</button>
         </div>
       </div>
     </div>
 
     <!-- Result -->
     <div class="result" id="result">
-      <div id="r-already" class="r-already" style="display:none">⚠️ 此考生已指派過教室</div>
+      <div class="r-status" id="r-status">—</div>
       <div class="r-name" id="r-name">—</div>
       <div class="r-no" id="r-no">—</div>
       <div class="r-room-box">
-        <div style="font-size:12px;color:var(--m);margin-bottom:4px">已指派至教室</div>
+        <div style="font-size:11px;color:var(--m);margin-bottom:2px">指派至教室</div>
         <div class="r-room" id="r-room">—</div>
         <div class="r-teachers" id="r-teachers">—</div>
       </div>
-      <div class="r-info" id="r-info">—</div>
-      <p style="font-size:12px;color:var(--g);margin-top:10px">✅ 老師評分頁面已自動出現此考生</p>
-      <button onclick="resetResult()" style="width:100%;margin-top:12px;background:var(--s);border:1px solid var(--b);color:var(--t);border-radius:10px;padding:10px;font-size:13px;cursor:pointer;font-family:inherit">繼續掃下一位 →</button>
+      <div class="r-info" id="r-info"></div>
+      <div class="r-msg" id="r-msg"></div>
+      <button class="next-btn" onclick="resetResult()">繼續掃下一位 →</button>
     </div>
 
-    <!-- History -->
     <div class="card">
       <div class="ch2">📋 本次指派記錄</div>
       <div id="hist"><p style="color:var(--m);font-size:12px;text-align:center;padding:12px">尚無記錄</p></div>
@@ -148,21 +142,9 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
 let myRoom = '', myName = '', scanner = null, hist = [];
 
-// Handle QR param on load
-window.addEventListener('load', () => {
-  const id = new URLSearchParams(location.search).get('id');
-  if (id && myRoom) processCandidate(id);
-});
-
 function doLogin() {
   const pw = document.getElementById('pw').value.trim();
   document.getElementById('err-login').style.display = 'none';
-  // Check admin
-  if (TEACHERS[pw]?.type === 'admin') {
-    alert('管理員密碼無法在此頁面使用，請以工作人員密碼登入');
-    return;
-  }
-  // Check staff from Firebase
   db.ref('staff').orderByChild('password').equalTo(pw).once('value').then(snap => {
     const data = snap.val();
     if (!data) { document.getElementById('err-login').style.display = 'block'; return; }
@@ -173,7 +155,7 @@ function doLogin() {
     document.getElementById('APP').style.display = 'block';
     document.getElementById('NAV').innerHTML = buildNav('scan', myName, 'doLogout()');
     document.getElementById('room-label').textContent = myRoom;
-    document.getElementById('staff-name-label').textContent = myName + ' 工作人員';
+    document.getElementById('staff-label').textContent = myName + ' 工作人員';
   }).catch(() => { document.getElementById('err-login').style.display = 'block'; });
 }
 
@@ -181,9 +163,8 @@ function doLogout() {
   document.getElementById('APP').style.display = 'none';
   document.getElementById('LP').style.display = 'flex';
   document.getElementById('pw').value = '';
-  myRoom = ''; myName = '';
+  myRoom = ''; myName = ''; hist = [];
   if (scanner) stopScan();
-  hist = [];
 }
 
 function switchMode(m, el) {
@@ -202,13 +183,13 @@ function startScan() {
     try {
       const id = new URL(url).searchParams.get('id');
       if (id) processCandidate(id);
-      else alert('QR碼無效，請確認是考生專屬QR碼');
+      else alert('QR碼無效');
     } catch (e) { alert('QR碼格式錯誤'); }
-  }, () => { });
+  }, () => {});
 }
 
 function stopScan() {
-  if (scanner) scanner.stop().catch(() => { });
+  if (scanner) scanner.stop().catch(() => {});
   scanner = null;
   document.getElementById('start-btn').style.display = 'block';
   document.getElementById('stop-btn').style.display = 'none';
@@ -221,19 +202,29 @@ function processManual() {
 
 function processCandidate(id) {
   if (!myRoom) { alert('請先登入'); return; }
+
   db.ref('candidates/' + id).once('value').then(snap => {
     const c = snap.val();
     if (!c) { alert('找不到此考生，請確認QR碼正確'); return; }
 
-    const isNew = !c.assignedRoom;
-    // Always assign to MY room (staff is locked to their room)
-    if (isNew) {
-      db.ref('candidates/' + id).update({ assignedRoom: myRoom, assignedAt: Date.now() });
+    const prevRoom = c.assignedRoom || null;
+
+    // 已在其他教室 → 確認後才改
+    if (prevRoom && prevRoom !== myRoom) {
+      if (!confirm(`⚠️ 此考生（${c.name}）已指派到 ${prevRoom}。\n確定改為 ${myRoom} 嗎？`)) return;
+      // 清掉舊教室的佇列記錄
+      db.ref('practicalQueue/' + prevRoom + '/' + id).remove();
+      // 清掉舊教室的評分（考生換教室，重新評分）
+      db.ref('candidates/' + id + '/practicalScores').remove();
     }
 
-    // Push to practical queue for my room — each scan = new queue entry
-    // This signals the teachers that this candidate is about to enter
-    const qEntry = {
+    const isDup = (prevRoom === myRoom); // 同一教室重複掃
+
+    // 寫入教室指派（不重複寫不影響）
+    db.ref('candidates/' + id).update({ assignedRoom: myRoom, assignedAt: Date.now() });
+
+    // 用 candidateId 當唯一 key → 重複掃只覆蓋，不產生重複記錄
+    db.ref('practicalQueue/' + myRoom + '/' + id).set({
       candidateId: id,
       name: c.name,
       school: c.school || '',
@@ -241,26 +232,38 @@ function processCandidate(id) {
       regNo: c.regNo,
       assignedAt: Date.now(),
       scannedBy: myName
-    };
-    db.ref('practicalQueue/' + myRoom).push(qEntry);
+    });
 
-    // Show result
-    const teachers = Object.values(TEACHERS).filter(t => t.room === myRoom && t.type === 'practical');
-    document.getElementById('r-name').textContent = c.name;
-    document.getElementById('r-no').textContent = '序號：' + c.regNo;
-    document.getElementById('r-room').textContent = myRoom;
-    document.getElementById('r-teachers').textContent = '👩‍🏫 ' + teachers.map(t => t.name).join('、');
-    document.getElementById('r-info').textContent =
-      (c.school ? '🏫 ' + c.school : '') + (c.dept ? '\n📚 ' + c.dept : '');
-    document.getElementById('r-already').style.display = isNew ? 'none' : 'inline-block';
-    document.getElementById('result').classList.add('show');
-
-    hist.unshift({ name: c.name, regNo: c.regNo, time: new Date().toLocaleTimeString() });
-    if (hist.length > 8) hist.pop();
+    showResult(c, isDup, prevRoom);
+    hist.unshift({ name: c.name, regNo: c.regNo, time: new Date().toLocaleTimeString(), isDup });
+    if (hist.length > 10) hist.pop();
     renderHist();
     document.getElementById('manual-id').value = '';
     history.replaceState(null, '', location.pathname);
   }).catch(() => alert('連線失敗，請確認網路'));
+}
+
+function showResult(c, isDup, prevRoom) {
+  const res = document.getElementById('result');
+  const teachers = Object.values(TEACHERS).filter(t => t.room === myRoom && t.type === 'practical');
+
+  res.className = 'result show ' + (isDup ? 'dup' : 'ok');
+  document.getElementById('r-status').textContent = isDup ? '⚠️ 重複掃碼' : '✅ 指派成功';
+  document.getElementById('r-status').style.color = isDup ? 'var(--y)' : 'var(--g)';
+  document.getElementById('r-name').textContent = c.name;
+  document.getElementById('r-no').textContent = '序號：' + c.regNo;
+  document.getElementById('r-room').textContent = myRoom;
+  document.getElementById('r-teachers').textContent = '👩‍🏫 ' + teachers.map(t => t.name).join('、');
+  document.getElementById('r-info').textContent =
+    (c.school ? '🏫 ' + c.school : '') + (c.dept ? '\n📚 ' + c.dept : '');
+  const msg = document.getElementById('r-msg');
+  if (isDup) {
+    msg.className = 'r-msg warn';
+    msg.textContent = '此考生已在此教室，老師畫面已更新';
+  } else {
+    msg.className = 'r-msg ok';
+    msg.textContent = '老師評分頁面已自動出現此考生';
+  }
 }
 
 function resetResult() {
@@ -271,8 +274,15 @@ function renderHist() {
   const el = document.getElementById('hist');
   if (!hist.length) { el.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:12px">尚無記錄</p>'; return; }
   el.innerHTML = hist.map(h => `<div class="hi">
-    <span><strong>${h.name}</strong> <span style="color:var(--m)">${h.regNo}</span></span>
-    <span><span class="hi-room">${myRoom}</span> <span style="color:var(--m);font-size:10px">${h.time}</span></span>
+    <span>
+      <strong>${h.name}</strong>
+      <span style="color:var(--m);margin-left:4px">${h.regNo}</span>
+      ${h.isDup ? '<span class="hi-dup">重複</span>' : ''}
+    </span>
+    <span>
+      <span class="hi-room">${myRoom}</span>
+      <span style="color:var(--m);font-size:10px;margin-left:6px">${h.time}</span>
+    </span>
   </div>`).join('');
 }
 </script>

@@ -138,13 +138,27 @@ function render() {
   tbody.innerHTML = list.map(c => {
     const iv = avg(c.interviewScores), pr = avg(c.practicalScores), tot = total(c);
     const st = status(c);
-    const ivT = Object.keys(c.interviewScores || {}).join('、');
-    const prT = Object.keys(c.practicalScores || {}).join('、');
+    // 面試：顯示兩位老師姓名
+    const ivTeachers = Object.keys(c.interviewScores || {});
+    // 術科：顯示兩位老師姓名（記錄在 practicalScores 的 key）
+    const prTeachers = Object.keys(c.practicalScores || {});
+    const ivDone = ivTeachers.length >= 2;
+    const prDone = prTeachers.length >= 2;
     return `<tr>
       <td class="mono">${c.regNo || ''}</td>
       <td><strong>${c.name || ''}</strong></td>
-      <td>${iv !== null ? `<div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:${iv}%;background:${barColor(iv)}"></div></div><span class="score ${scoreCol(iv)}">${iv.toFixed(1)}</span></div><div class="teacher-line">${ivT}</div>` : '<span class="badge bdm">未評</span>'}</td>
-      <td>${pr !== null ? `<div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:${pr}%;background:${barColor(pr)}"></div></div><span class="score ${scoreCol(pr)}">${pr.toFixed(1)}</span></div><div class="teacher-line">${prT}</div>` : '<span class="badge bdm">未評</span>'}</td>
+      <td>
+        ${iv !== null
+          ? `<div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:${iv}%;background:${barColor(iv)}"></div></div><span class="score ${scoreCol(iv)}">${iv.toFixed(1)}</span></div>
+             <div class="teacher-line">${ivTeachers.join('、')}${ivDone ? '' : ' <span style="color:var(--y)">(待補)</span>'}</div>`
+          : `<span class="badge bdm">未評</span>`}
+      </td>
+      <td>
+        ${pr !== null
+          ? `<div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:${pr}%;background:${barColor(pr)}"></div></div><span class="score ${scoreCol(pr)}">${pr.toFixed(1)}</span></div>
+             <div class="teacher-line">${prTeachers.join('、')}${prDone ? '' : ' <span style="color:var(--y)">(待補)</span>'}${c.assignedRoom ? ' ・ ' + c.assignedRoom : ''}</div>`
+          : `<span class="badge bdm">未評</span>`}
+      </td>
       <td><span class="score ${scoreCol(tot)}" style="font-size:17px">${tot !== null ? tot.toFixed(1) : '—'}</span>${rankMap[c.id] ? `<div style="font-size:10px;color:var(--m)">#${rankMap[c.id]}</div>` : ''}</td>
       <td>${c.assignedRoom ? `<span class="badge bdy">${c.assignedRoom}</span>` : '<span style="color:var(--m);font-size:11px">—</span>'}</td>
       <td>${st === 'done' ? '<span class="badge bdg">完整</span>' : st === 'partial' ? '<span class="badge bdy">部分</span>' : '<span class="badge bdm">未評</span>'}</td>
