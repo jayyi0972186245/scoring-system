@@ -199,23 +199,37 @@ function doLogout() {
 let unsubQueue = null, unsubCandidates = null;
 
 function startListening() {
-  // 1. Listen to practical queue for this room
   const qRef = db.ref('practicalQueue/' + teacher.room);
   unsubQueue = qRef.on('value', snap => {
     const data = snap.val() || {};
-    // Mark new arrivals
     Object.keys(data).forEach(cid => {
       if (!queueData[cid]) newCids.add(cid);
     });
     queueData = data;
+
+    // 如果 candidateData 已載入，立刻清除孤兒
+    if (Object.keys(candidateData).length > 0) cleanOrphanQueue();
+
     refreshUI();
   });
 
-  // 2. Listen to all candidates (to get scores)
   const cRef = db.ref('candidates');
   unsubCandidates = cRef.on('value', snap => {
     candidateData = snap.val() || {};
+    cleanOrphanQueue();
     refreshUI();
+  });
+}
+
+// 清除佇列中已不存在的考生（從 Firebase 和本地同時移除）
+function cleanOrphanQueue() {
+  Object.keys(queueData).forEach(cid => {
+    if (!candidateData[cid]) {
+      db.ref('practicalQueue/' + teacher.room + '/' + cid).remove();
+      delete queueData[cid];
+      newCids.delete(cid);
+      if (selCid === cid) selCid = null;
+    }
   });
 }
 
@@ -233,9 +247,11 @@ function getMyScore(cid) {
   return (v !== null && v !== undefined && v !== '') ? Number(v) : null;
 }
 
-// ── Core: sorted queue entries ────────────────────────
+// ── Core: sorted queue entries (only candidates that still exist) ──
 function sortedQueue() {
-  return Object.entries(queueData).sort((a, b) => (a[1].assignedAt || 0) - (b[1].assignedAt || 0));
+  return Object.entries(queueData)
+    .filter(([cid]) => !!candidateData[cid]) // 過濾已刪除的考生
+    .sort((a, b) => (a[1].assignedAt || 0) - (b[1].assignedAt || 0));
 }
 
 // ── Core: pick which candidate to show ───────────────
