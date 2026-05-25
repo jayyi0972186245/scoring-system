@@ -664,7 +664,14 @@ function tabProcessCandidate(id) {
   }).catch(() => alert('連線失敗'));
 }
 
-function tabResetResult() { document.getElementById('tab-result').style.display = 'none'; }
+function tabResetResult() {
+  document.getElementById('tab-result').style.display = 'none';
+  // 自動重新啟動鏡頭掃描
+  const camMode = document.getElementById('scan-mode-camera');
+  if (camMode && camMode.style.display !== 'none') {
+    tabStartScan();
+  }
+}
 
 function tabRenderHist() {
   const el = document.getElementById('tab-hist');
