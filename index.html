@@ -609,19 +609,25 @@ function switchScanMode(m, el) {
 function tabStartScan() {
   document.getElementById('tab-start-btn').style.display = 'none';
   document.getElementById('tab-stop-btn').style.display = 'block';
+  document.getElementById('tab-reader').innerHTML = '';
   tabScanner = new Html5Qrcode('tab-reader');
   tabScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 220, height: 220 } }, url => {
-    tabStopScan();
-    try { const id = new URL(url).searchParams.get('id'); if (id) tabProcessCandidate(id); else alert('QR碼無效'); }
-    catch (e) { alert('QR碼格式錯誤'); }
+    const s = tabScanner; tabScanner = null;
+    s.stop().catch(() => {}).finally(() => {
+      document.getElementById('tab-start-btn').style.display = 'block';
+      document.getElementById('tab-stop-btn').style.display = 'none';
+      try { const id = new URL(url).searchParams.get('id'); if (id) tabProcessCandidate(id); else alert('QR碼無效'); }
+      catch (e) { alert('QR碼格式錯誤'); }
+    });
   }, () => {});
 }
 
 function tabStopScan() {
-  if (tabScanner) tabScanner.stop().catch(() => {});
-  tabScanner = null;
   document.getElementById('tab-start-btn').style.display = 'block';
   document.getElementById('tab-stop-btn').style.display = 'none';
+  if (!tabScanner) return Promise.resolve();
+  const s = tabScanner; tabScanner = null;
+  return s.stop().catch(() => {});
 }
 
 function tabProcessManual() {
@@ -666,10 +672,9 @@ function tabProcessCandidate(id) {
 
 function tabResetResult() {
   document.getElementById('tab-result').style.display = 'none';
-  // 自動重新啟動鏡頭掃描
   const camMode = document.getElementById('scan-mode-camera');
   if (camMode && camMode.style.display !== 'none') {
-    tabStartScan();
+    tabStopScan().then(() => setTimeout(() => tabStartScan(), 400));
   }
 }
 
