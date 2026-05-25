@@ -74,6 +74,8 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 .score-row{display:flex;align-items:center;gap:12px}
 .snum{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;width:100px;text-align:center;background:var(--s);border:2px solid var(--b);border-radius:10px;padding:10px;color:var(--t);outline:none}
 .snum:focus{border-color:var(--ac)}
+.snum::-webkit-outer-spin-button,.snum::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.snum[type=number]{-moz-appearance:textfield}
 .btn-submit{width:100%;background:var(--g);color:#fff;border:none;border-radius:10px;padding:15px;font-size:17px;font-weight:700;cursor:pointer;font-family:inherit}
 .btn-edit{width:100%;background:transparent;border:1px solid var(--b);color:var(--m);border-radius:10px;padding:9px;font-size:13px;cursor:pointer;font-family:inherit;margin-top:8px}
 .btn-edit:hover{border-color:var(--ac);color:var(--ac)}
@@ -355,6 +357,7 @@ function renderMain() {
           <p>請輸入術科分數（0–100）</p>
           <div class="score-row">
             <input type="number" class="snum" id="sinp" min="0" max="100" placeholder="—"
+              oninput="let v=parseInt(this.value);if(!isNaN(v)){if(v>100)this.value=100;if(v<0)this.value=0;}"
               onkeydown="if(event.key==='Enter')submitScore()">
             <span style="color:var(--m);font-size:13px">0–100 分</span>
           </div>

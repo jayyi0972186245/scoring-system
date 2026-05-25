@@ -49,6 +49,8 @@ input.pw:focus{border-color:var(--ac)}
 .score-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
 .si{width:110px;background:var(--s2);border:2px solid var(--b);border-radius:10px;padding:10px;color:var(--t);font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;outline:none;text-align:center}
 .si:focus{border-color:var(--ac)}
+.si::-webkit-outer-spin-button,.si::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.si[type=number]{-moz-appearance:textfield}
 .already{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--g);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
 .partner-box{background:var(--s2);border-radius:8px;padding:9px 12px;font-size:13px;margin-top:6px}
 .avg-box{background:rgba(52,211,153,.08);border:1px solid rgba(52,211,153,.2);border-radius:8px;padding:9px 12px;font-size:13px;color:var(--g);margin-top:6px}
@@ -156,7 +158,9 @@ function buildCard(c) {
            <button onclick="editScore('${c.id}')" style="background:transparent;border:1px solid var(--g);color:var(--g);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;width:auto;margin:0">修改</button></div>`
         : `<div style="font-size:13px;color:var(--m);margin-bottom:8px">面試分數（0–100）</div>
            <div class="score-row">
-             <input type="number" class="si" id="si-${c.id}" min="0" max="100" placeholder="—" onkeydown="if(event.key==='Enter')save('${c.id}')">
+             <input type="number" class="si" id="si-${c.id}" min="0" max="100" placeholder="—"
+               oninput="let v=parseInt(this.value);if(!isNaN(v)){if(v>100)this.value=100;if(v<0)this.value=0;}"
+               onkeydown="if(event.key==='Enter')save('${c.id}')">
              <span style="color:var(--m);font-size:12px">0 – 100 分</span>
            </div>
            <button class="btn bg" onclick="save('${c.id}')" style="margin-top:10px">✓ 確認送出</button>`}
