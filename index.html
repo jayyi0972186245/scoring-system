@@ -38,6 +38,8 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 .st{background:var(--s);border:1px solid var(--b);border-radius:12px;padding:14px;text-align:center}
 .st .n{font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--ac)}
 .st .l{font-size:11px;color:var(--m);margin-top:2px}
+.st-click{cursor:pointer;transition:.15s}
+.st-click:hover{border-color:var(--ac);transform:translateY(-2px)}
 .grid2{display:grid;grid-template-columns:310px 1fr;gap:16px;align-items:start}
 /* Tabs */
 .tabs{display:flex;gap:0;border-bottom:1px solid var(--b);margin-bottom:20px}
@@ -117,11 +119,30 @@ tr:hover td{background:rgba(88,166,255,.025)}
   <div id="NAV"></div>
   <div class="wrap">
     <div class="stats">
-      <div class="st"><div class="n" id="s0">0</div><div class="l">總考生</div></div>
-      <div class="st"><div class="n" id="s1">0</div><div class="l">已報到</div></div>
-      <div class="st"><div class="n" id="s2">0</div><div class="l">面試完成</div></div>
-      <div class="st"><div class="n" id="s3">0</div><div class="l">術科完成</div></div>
-      <div class="st"><div class="n" id="s4">0</div><div class="l">全部完成</div></div>
+      <div class="st st-click" onclick="showStatDetail('all')"><div class="n" id="s0">0</div><div class="l">總考生</div></div>
+      <div class="st st-click" onclick="showStatDetail('checkedin')"><div class="n" id="s1">0</div><div class="l">已報到</div></div>
+      <div class="st st-click" onclick="showStatDetail('iv')"><div class="n" id="s2">0</div><div class="l">面試完成</div></div>
+      <div class="st st-click" onclick="showStatDetail('pr')"><div class="n" id="s3">0</div><div class="l">術科完成</div></div>
+      <div class="st st-click" onclick="showStatDetail('done')"><div class="n" id="s4">0</div><div class="l">全部完成</div></div>
+    </div>
+
+    <!-- Stats Detail Modal -->
+    <div id="stat-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:flex-start;justify-content:center;padding:60px 16px;overflow-y:auto;backdrop-filter:blur(4px)" onclick="if(event.target===this)closeStatModal()">
+      <div style="background:var(--s);border:1px solid var(--b);border-radius:18px;width:100%;max-width:760px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--b)">
+          <div>
+            <div style="font-size:16px;font-weight:700" id="stat-modal-title">—</div>
+            <div style="font-size:12px;color:var(--m);margin-top:2px" id="stat-modal-count">—</div>
+          </div>
+          <button onclick="closeStatModal()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13px;font-family:inherit">關閉</button>
+        </div>
+        <div style="overflow-x:auto;max-height:60vh;overflow-y:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead id="stat-modal-thead" style="position:sticky;top:0;background:var(--s2)"></thead>
+            <tbody id="stat-modal-tbody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- Tabs -->
@@ -376,6 +397,72 @@ function updateStats() {
   document.getElementById('s2').textContent = list.filter(c => avg(c.interviewScores) !== null).length;
   document.getElementById('s3').textContent = list.filter(c => avg(c.practicalScores) !== null).length;
   document.getElementById('s4').textContent = list.filter(c => avg(c.interviewScores) !== null && avg(c.practicalScores) !== null).length;
+}
+
+function closeStatModal() {
+  document.getElementById('stat-modal').style.display = 'none';
+}
+
+function showStatDetail(type) {
+  const all = Object.values(candidates).sort((a, b) => String(a.regNo || '').localeCompare(String(b.regNo || '')));
+  const titles = { all: '全部考生', checkedin: '已報到考生', iv: '面試完成考生', pr: '術科完成考生', done: '全部完成考生' };
+
+  let list;
+  if (type === 'all')       list = all;
+  if (type === 'checkedin') list = all.filter(c => c.checkedIn);
+  if (type === 'iv')        list = all.filter(c => avg(c.interviewScores) !== null);
+  if (type === 'pr')        list = all.filter(c => avg(c.practicalScores) !== null);
+  if (type === 'done')      list = all.filter(c => avg(c.interviewScores) !== null && avg(c.practicalScores) !== null);
+
+  document.getElementById('stat-modal-title').textContent = titles[type];
+  document.getElementById('stat-modal-count').textContent = `共 ${list.length} 位考生`;
+
+  // 欄位依類型不同
+  const showIv = (type === 'iv' || type === 'done' || type === 'all');
+  const showPr = (type === 'pr' || type === 'done' || type === 'all');
+
+  // 表頭
+  document.getElementById('stat-modal-thead').innerHTML = `<tr>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">序號</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500">姓名</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500">報到</th>
+    ${showIv ? `
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">面試考場</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">面試成績</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">面試老師</th>` : ''}
+    ${showPr ? `
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">術科考場</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">術科成績</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">術科老師</th>` : ''}
+  </tr>`;
+
+  // 表格內容
+  const noData = '<span style="color:var(--m);font-size:11px">—</span>';
+  document.getElementById('stat-modal-tbody').innerHTML = list.map(c => {
+    const ivAvg = avg(c.interviewScores);
+    const prAvg = avg(c.practicalScores);
+    const ivTeachers = Object.keys(c.interviewScores || {}).join('、') || '—';
+    const prTeachers = Object.keys(c.practicalScores || {}).join('、') || '—';
+
+    return `<tr style="border-bottom:1px solid rgba(48,54,61,.5)">
+      <td style="padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--m)">${c.regNo || ''}</td>
+      <td style="padding:10px 14px;font-weight:600">${c.name || ''}</td>
+      <td style="padding:10px 14px">${c.checkedIn
+        ? '<span style="font-size:11px;background:rgba(63,185,80,.12);color:var(--g);padding:2px 7px;border-radius:6px;font-weight:600">✓ 已報到</span>'
+        : '<span style="font-size:11px;color:var(--m)">未報到</span>'}</td>
+      ${showIv ? `
+      <td style="padding:10px 14px"><span style="font-size:12px;font-weight:600;color:var(--ac)">CM316</span></td>
+      <td style="padding:10px 14px;font-family:'JetBrains Mono',monospace;font-weight:700;color:${ivAvg !== null ? 'var(--g)' : 'var(--m)'}">${ivAvg !== null ? ivAvg.toFixed(1) : '—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--m)">${ivAvg !== null ? ivTeachers : '—'}</td>` : ''}
+      ${showPr ? `
+      <td style="padding:10px 14px"><span style="font-size:12px;font-weight:600;color:var(--ac2)">${c.assignedRoom || '—'}</span></td>
+      <td style="padding:10px 14px;font-family:'JetBrains Mono',monospace;font-weight:700;color:${prAvg !== null ? 'var(--g)' : 'var(--m)'}">${prAvg !== null ? prAvg.toFixed(1) : '—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--m)">${prAvg !== null ? prTeachers : '—'}</td>` : ''}
+    </tr>`;
+  }).join('');
+
+  const modal = document.getElementById('stat-modal');
+  modal.style.display = 'flex';
 }
 
 function setFilt(f, el) {
