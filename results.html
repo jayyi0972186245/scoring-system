@@ -77,10 +77,9 @@ tr:hover td{background:rgba(96,165,250,.04)}
         <th onclick="setSort('name')">考生 ↕</th>
         <th onclick="setSort('iv')">面試成績 ↕</th>
         <th onclick="setSort('pr')">術科成績 ↕</th>
-        <th onclick="setSort('total')">綜合 ↕</th>
         <th>教室</th><th>狀態</th>
       </tr></thead>
-      <tbody id="tbody"><tr><td colspan="7" class="no-data">載入中...</td></tr></tbody>
+      <tbody id="tbody"><tr><td colspan="6" class="no-data">載入中...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -95,7 +94,6 @@ let candidates = {}, filt = 'all', sortKey = 'regNo', sortDir = 1;
 db.ref('candidates').on('value', s => { candidates = s.val() || {}; updateStats(); render(); });
 
 function avg(o) { if (!o) return null; const v = Object.values(o).filter(x => x !== null && x !== undefined && x !== ''); return v.length ? v.reduce((a, b) => a + Number(b), 0) / v.length : null; }
-function total(c) { const iv = avg(c.interviewScores), pr = avg(c.practicalScores); if (iv === null && pr === null) return null; if (iv === null) return pr; if (pr === null) return iv; return (iv + pr) / 2; }
 function status(c) { const iv = avg(c.interviewScores) !== null, pr = avg(c.practicalScores) !== null; return iv && pr ? 'done' : iv || pr ? 'partial' : 'none'; }
 function scoreCol(v) { if (v === null) return 'sm'; return v >= 80 ? 'sg' : v >= 60 ? 'sy' : 'sr'; }
 function barColor(v) { if (v === null) return '#1e2d4f'; return v >= 80 ? '#4ade80' : v >= 60 ? '#facc15' : '#f87171'; }
@@ -124,22 +122,16 @@ function render() {
     if (sortKey === 'name') return (a.name || '').localeCompare(b.name || '') * sortDir;
     if (sortKey === 'iv') { va = avg(a.interviewScores) ?? -1; vb = avg(b.interviewScores) ?? -1; }
     if (sortKey === 'pr') { va = avg(a.practicalScores) ?? -1; vb = avg(b.practicalScores) ?? -1; }
-    if (sortKey === 'total') { va = total(a) ?? -1; vb = total(b) ?? -1; }
-    return (va - vb) * sortDir;
+    return ((va ?? 0) - (vb ?? 0)) * sortDir;
   });
 
-  const ranked = [...Object.values(candidates)].filter(c => total(c) !== null).sort((a, b) => (total(b) || 0) - (total(a) || 0));
-  const rankMap = {}; ranked.forEach((c, i) => rankMap[c.id] = i + 1);
-
   const tbody = document.getElementById('tbody');
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" class="no-data">沒有符合的考生</td></tr>'; return; }
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="no-data">沒有符合的考生</td></tr>'; return; }
 
   tbody.innerHTML = list.map(c => {
-    const iv = avg(c.interviewScores), pr = avg(c.practicalScores), tot = total(c);
+    const iv = avg(c.interviewScores), pr = avg(c.practicalScores);
     const st = status(c);
-    // 面試：顯示兩位老師姓名
     const ivTeachers = Object.keys(c.interviewScores || {});
-    // 術科：顯示兩位老師姓名（記錄在 practicalScores 的 key）
     const prTeachers = Object.keys(c.practicalScores || {});
     const ivDone = ivTeachers.length >= 2;
     const prDone = prTeachers.length >= 2;
@@ -158,7 +150,6 @@ function render() {
              <div class="teacher-line">${prTeachers.join('、')}${prDone ? '' : ' <span style="color:var(--y)">(待補)</span>'}${c.assignedRoom ? ' ・ ' + c.assignedRoom : ''}</div>`
           : `<span class="badge bdm">未評</span>`}
       </td>
-      <td><span class="score ${scoreCol(tot)}" style="font-size:17px">${tot !== null ? tot.toFixed(1) : '—'}</span>${rankMap[c.id] ? `<div style="font-size:10px;color:var(--m)">#${rankMap[c.id]}</div>` : ''}</td>
       <td>${c.assignedRoom ? `<span class="badge bdy">${c.assignedRoom}</span>` : '<span style="color:var(--m);font-size:11px">—</span>'}</td>
       <td>${st === 'done' ? '<span class="badge bdg">完整</span>' : st === 'partial' ? '<span class="badge bdy">部分</span>' : '<span class="badge bdm">未評</span>'}</td>
     </tr>`;
@@ -166,10 +157,10 @@ function render() {
 }
 
 function exportCSV() {
-  const rows = [['序號', '姓名', '畢業系別', '就讀學校', '報到', '面試平均', '面試老師', '術科平均', '術科老師', '綜合', '指派教室', '狀態']];
+  const rows = [['序號', '姓名', '畢業系別', '就讀學校', '報到', '面試平均', '面試老師', '術科平均', '術科老師', '指派教室', '狀態']];
   Object.values(candidates).sort((a, b) => String(a.regNo).localeCompare(String(b.regNo))).forEach(c => {
-    const iv = avg(c.interviewScores), pr = avg(c.practicalScores), tot = total(c);
-    rows.push([c.regNo, c.name, c.dept, c.school, c.checkedIn ? '已報到' : '未報到', iv?.toFixed(1) || '', Object.keys(c.interviewScores || {}).join('/'), pr?.toFixed(1) || '', Object.keys(c.practicalScores || {}).join('/'), tot?.toFixed(1) || '', c.assignedRoom || '', status(c) === 'done' ? '完整' : status(c) === 'partial' ? '部分' : '未評']);
+    const iv = avg(c.interviewScores), pr = avg(c.practicalScores);
+    rows.push([c.regNo, c.name, c.dept, c.school, c.checkedIn ? '已報到' : '未報到', iv?.toFixed(1) || '', Object.keys(c.interviewScores || {}).join('/'), pr?.toFixed(1) || '', Object.keys(c.practicalScores || {}).join('/'), c.assignedRoom || '', status(c) === 'done' ? '完整' : status(c) === 'partial' ? '部分' : '未評']);
   });
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(rows.map(r => r.join(',')).join('\n'));
