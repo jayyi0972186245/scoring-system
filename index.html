@@ -425,9 +425,26 @@ function login() {
     initCheckinQR();
     db.ref('candidates').on('value', s => { candidates = s.val() || {}; updateStats(); renderTable(); });
     db.ref('staff').on('value', s => { staffList = s.val() || {}; renderStaff(); });
-    db.ref('teachers').on('value', s => { teacherList = s.val() || {}; renderTeachers(); });
+    db.ref('teachers').on('value', s => {
+      teacherList = s.val() || {};
+      // 若 Firebase 裡完全沒有老師，自動把內建老師寫入（只執行一次）
+      if (Object.keys(teacherList).length === 0) seedBuiltinTeachers();
+      renderTeachers();
+    });
     document.getElementById('er').style.display = 'none';
   } else { document.getElementById('er').style.display = 'block'; }
+}
+
+function seedBuiltinTeachers() {
+  const batch = {};
+  Object.entries(TEACHERS).forEach(([pw, t]) => {
+    if (t.type === 'interview' || t.type === 'practical') {
+      const id = 'teacher_builtin_' + pw;
+      batch[id] = { id, name: t.name, password: pw, room: t.room, type: t.type, createdAt: Date.now() };
+    }
+  });
+  db.ref('teachers').update(batch);
+}
 }
 function logout() {
   document.getElementById('APP').style.display = 'none';
@@ -714,13 +731,15 @@ function renderTeachers() {
 function renderTeacherList(type, elId) {
   const el = document.getElementById(elId);
   if (!el) return;
-  const defaults = Object.entries(TEACHERS)
-    .filter(([, t]) => t.type === type)
-    .map(([pw, t]) => ({ id: 'default_' + pw, name: t.name, password: pw, room: t.room, type, isDefault: true }));
-  const dynamic = Object.values(teacherList).filter(t => t.type === type);
-  const defaultsFiltered = defaults.filter(d => !dynamic.find(dyn => dyn.name === d.name));
-  const list = [...defaultsFiltered, ...dynamic].sort((a, b) => (a.room || '').localeCompare(b.room || '') || a.name.localeCompare(b.name));
-  if (!list.length) { el.innerHTML = '<p style="color:var(--m);font-size:13px;text-align:center;padding:24px">尚無老師資料</p>'; return; }
+  const list = Object.values(teacherList)
+    .filter(t => t.type === type)
+    .sort((a, b) => (a.room || '').localeCompare(b.room || '') || a.name.localeCompare(b.name));
+
+  if (!list.length) {
+    el.innerHTML = '<p style="color:var(--m);font-size:13px;text-align:center;padding:24px">尚無老師，請在左側新增</p>';
+    return;
+  }
+
   const roomCls = { CM316: 'rt-216', CM216: 'rt-216', CM214: 'rt-214', CM212: 'rt-212' };
   el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
     <thead><tr>
@@ -730,13 +749,11 @@ function renderTeacherList(type, elId) {
       <th style="color:var(--m);font-size:11px;padding:6px 10px;border-bottom:1px solid var(--b)"></th>
     </tr></thead>
     <tbody>${list.map(t => `<tr>
-      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)">
-        <strong>${t.name}</strong>${t.isDefault ? '<span style="font-size:10px;color:var(--m);margin-left:6px">(內建)</span>' : ''}
-      </td>
-      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4);font-family:\'JetBrains Mono\',monospace;color:var(--y)">${t.password}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><strong>${t.name}</strong></td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4);font-family:'JetBrains Mono',monospace;color:var(--y)">${t.password}</td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><span class="room-tag ${roomCls[t.room] || ''}">${t.room}</span></td>
       <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)">
-        ${t.isDefault ? '<span style="font-size:11px;color:var(--m)">內建</span>' : `<button class="btn br bsm" onclick="delTeacher('${t.id}','${t.name}')">刪除</button>`}
+        <button class="btn br bsm" onclick="delTeacher('${t.id}','${t.name}')">刪除</button>
       </td>
     </tr>`).join('')}</tbody>
   </table>`;

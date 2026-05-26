@@ -109,22 +109,22 @@ function login() {
   const pw = document.getElementById('pw').value.trim();
   document.getElementById('er').style.display = 'none';
 
-  // 先查靜態設定
-  const staticT = Object.values(TEACHERS).find(t => t.type === 'interview' && pw === Object.keys(TEACHERS).find(k => TEACHERS[k] === t));
-  const staticMatch = TEACHERS[pw];
-  if (staticMatch?.type === 'interview') {
-    doLoginWith({ name: staticMatch.name, room: staticMatch.room, type: 'interview' });
-    return;
-  }
-
-  // 再查 Firebase teachers 節點
+  // 查 Firebase teachers 節點（唯一來源）
   db.ref('teachers').orderByChild('password').equalTo(pw).once('value').then(snap => {
     const data = snap.val();
-    if (!data) { document.getElementById('er').style.display = 'block'; return; }
-    const t = Object.values(data).find(t => t.type === 'interview');
-    if (!t) { document.getElementById('er').style.display = 'block'; return; }
-    doLoginWith(t);
-  }).catch(() => { document.getElementById('er').style.display = 'block'; });
+    if (data) {
+      const t = Object.values(data).find(t => t.type === 'interview');
+      if (t) { doLoginWith(t); return; }
+    }
+    // fallback：查靜態內建（兼容尚未寫入 Firebase 的情況）
+    const staticT = TEACHERS[pw];
+    if (staticT?.type === 'interview') { doLoginWith({ name: staticT.name, room: staticT.room, type: 'interview' }); return; }
+    document.getElementById('er').style.display = 'block';
+  }).catch(() => {
+    const staticT = TEACHERS[pw];
+    if (staticT?.type === 'interview') doLoginWith({ name: staticT.name, room: staticT.room, type: 'interview' });
+    else document.getElementById('er').style.display = 'block';
+  });
 }
 
 function doLoginWith(t) {
