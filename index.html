@@ -427,9 +427,11 @@ function login() {
     db.ref('staff').on('value', s => { staffList = s.val() || {}; renderStaff(); });
     db.ref('teachers').on('value', s => {
       teacherList = s.val() || {};
-      // 若 Firebase 裡完全沒有老師，自動把內建老師寫入（只執行一次）
-      if (Object.keys(teacherList).length === 0) seedBuiltinTeachers();
       renderTeachers();
+    });
+    // 獨立檢查是否需要 seed，不影響登入流程
+    db.ref('teachers').once('value').then(s => {
+      if (!s.val() || Object.keys(s.val()).length === 0) seedBuiltinTeachers();
     });
     document.getElementById('er').style.display = 'none';
   } else { document.getElementById('er').style.display = 'block'; }
