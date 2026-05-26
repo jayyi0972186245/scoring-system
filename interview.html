@@ -107,17 +107,35 @@ let teacher = null, candidates = {}, filt = 'all', activeId = null;
 
 function login() {
   const pw = document.getElementById('pw').value.trim();
-  const t = TEACHERS[pw];
-  if (t?.type === 'interview') {
-    teacher = { ...t, pw };
-    document.getElementById('LP').style.display = 'none';
-    document.getElementById('APP').style.display = 'block';
-    document.getElementById('NAV').innerHTML = buildNav('interview', t.name + ' 委員', 'logout()');
-    document.getElementById('h-name').textContent = t.name + ' 委員';
-    document.getElementById('h-av').textContent = t.name[0];
-    document.getElementById('er').style.display = 'none';
-    db.ref('candidates').on('value', s => { candidates = s.val() || {}; render(); });
-  } else { document.getElementById('er').style.display = 'block'; }
+  document.getElementById('er').style.display = 'none';
+
+  // 先查靜態設定
+  const staticT = Object.values(TEACHERS).find(t => t.type === 'interview' && pw === Object.keys(TEACHERS).find(k => TEACHERS[k] === t));
+  const staticMatch = TEACHERS[pw];
+  if (staticMatch?.type === 'interview') {
+    doLoginWith({ name: staticMatch.name, room: staticMatch.room, type: 'interview' });
+    return;
+  }
+
+  // 再查 Firebase teachers 節點
+  db.ref('teachers').orderByChild('password').equalTo(pw).once('value').then(snap => {
+    const data = snap.val();
+    if (!data) { document.getElementById('er').style.display = 'block'; return; }
+    const t = Object.values(data).find(t => t.type === 'interview');
+    if (!t) { document.getElementById('er').style.display = 'block'; return; }
+    doLoginWith(t);
+  }).catch(() => { document.getElementById('er').style.display = 'block'; });
+}
+
+function doLoginWith(t) {
+  teacher = { ...t };
+  document.getElementById('LP').style.display = 'none';
+  document.getElementById('APP').style.display = 'block';
+  document.getElementById('NAV').innerHTML = buildNav('interview', t.name + ' 委員', 'logout()');
+  document.getElementById('h-name').textContent = t.name + ' 委員';
+  document.getElementById('h-av').textContent = t.name[0];
+  document.getElementById('er').style.display = 'none';
+  db.ref('candidates').on('value', s => { candidates = s.val() || {}; render(); });
 }
 function logout() {
   document.getElementById('APP').style.display = 'none';

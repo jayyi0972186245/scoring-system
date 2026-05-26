@@ -172,13 +172,27 @@ let newCids = new Set(); // newly arrived (for NEW badge)
 // ── Login / Logout ────────────────────────────────────
 function doLogin() {
   const pw = document.getElementById('pw').value.trim();
-  const t = TEACHERS[pw];
-  if (!t || t.type !== 'practical') {
-    document.getElementById('err').style.display = 'block';
+  document.getElementById('err').style.display = 'none';
+
+  // 先查靜態設定
+  const staticT = TEACHERS[pw];
+  if (staticT?.type === 'practical') {
+    startSession(staticT);
     return;
   }
-  teacher = t;
-  document.getElementById('err').style.display = 'none';
+
+  // 再查 Firebase teachers 節點
+  db.ref('teachers').orderByChild('password').equalTo(pw).once('value').then(snap => {
+    const data = snap.val();
+    if (!data) { document.getElementById('err').style.display = 'block'; return; }
+    const t = Object.values(data).find(t => t.type === 'practical');
+    if (!t) { document.getElementById('err').style.display = 'block'; return; }
+    startSession(t);
+  }).catch(() => { document.getElementById('err').style.display = 'block'; });
+}
+
+function startSession(t) {
+  teacher = { ...t };
   document.getElementById('LP').style.display = 'none';
   document.getElementById('APP').style.display = 'block';
   document.getElementById('NAV').innerHTML = buildNav('practical', t.name + ' 委員', 'doLogout()');
@@ -186,6 +200,7 @@ function doLogin() {
   document.getElementById('h-name').textContent = t.name + ' 委員';
   document.getElementById('h-room').textContent = t.room + ' 術科';
   document.getElementById('sb-room').textContent = t.room;
+  document.getElementById('err').style.display = 'none';
   startListening();
 }
 

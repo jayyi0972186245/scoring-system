@@ -150,6 +150,8 @@ tr:hover td{background:rgba(88,166,255,.025)}
       <div class="tab on" onclick="showTab('t-main',this)">👥 考生名單</div>
       <div class="tab" onclick="showTab('t-staff-mgmt',this)">👷 工作人員管理</div>
       <div class="tab" onclick="showTab('t-scan-tab',this)">📱 工作人員掃碼</div>
+      <div class="tab" onclick="showTab('t-iv-teacher',this)">🎤 面試老師管理</div>
+      <div class="tab" onclick="showTab('t-pr-teacher',this)">✏️ 術科老師管理</div>
       <div class="tab" onclick="showTab('t-tools',this)">🛠️ 工具</div>
     </div>
 
@@ -322,6 +324,54 @@ tr:hover td{background:rgba(88,166,255,.025)}
     </div><!-- /t-scan-tab -->
 
     <!-- Tab: 工具 -->
+    <!-- Tab: 面試老師管理 -->
+    <div class="pane" id="t-iv-teacher">
+      <div class="staff-grid">
+        <div class="card">
+          <div class="ch2">➕ 新增 / 修改面試老師</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">面試考場固定為 CM316，新增後老師使用此密碼登入面試評分頁面</p>
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">老師姓名</label>
+          <input class="inp" id="iv-name" placeholder="例：黃祥熙" style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">登入密碼</label>
+          <input class="inp" id="iv-pw" placeholder="數字或英數字皆可" style="margin-bottom:14px">
+          <button class="btn bg" style="width:100%" onclick="addTeacher('interview')">新增面試老師</button>
+          <div id="iv-msg" style="margin-top:8px;font-size:12px;display:none"></div>
+        </div>
+        <div class="card">
+          <div class="ch2">🎤 目前面試老師（CM316）</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">老師使用各自密碼至 <strong style="color:var(--ac)">interview.html</strong> 登入評分</p>
+          <div id="iv-teacher-list"><p style="color:var(--m);font-size:13px;text-align:center;padding:24px">載入中...</p></div>
+        </div>
+      </div>
+    </div><!-- /t-iv-teacher -->
+
+    <!-- Tab: 術科老師管理 -->
+    <div class="pane" id="t-pr-teacher">
+      <div class="staff-grid">
+        <div class="card">
+          <div class="ch2">➕ 新增 / 修改術科老師</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">新增後老師使用此密碼登入術科評分頁面，系統依教室分配</p>
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">老師姓名</label>
+          <input class="inp" id="pr-name" placeholder="例：蔡登茂" style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">登入密碼</label>
+          <input class="inp" id="pr-pw" placeholder="數字或英數字皆可" style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">負責教室</label>
+          <select class="sel" id="pr-room" style="margin-bottom:14px">
+            <option value="CM216">CM216</option>
+            <option value="CM214">CM214</option>
+            <option value="CM212">CM212</option>
+          </select>
+          <button class="btn bg" style="width:100%" onclick="addTeacher('practical')">新增術科老師</button>
+          <div id="pr-msg" style="margin-top:8px;font-size:12px;display:none"></div>
+        </div>
+        <div class="card">
+          <div class="ch2">✏️ 目前術科老師</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">老師使用各自密碼至 <strong style="color:var(--ac)">practical.html</strong> 登入評分</p>
+          <div id="pr-teacher-list"><p style="color:var(--m);font-size:13px;text-align:center;padding:24px">載入中...</p></div>
+        </div>
+      </div>
+    </div><!-- /t-pr-teacher -->
+
     <div class="pane" id="t-tools">
       <div style="max-width:480px">
         <div class="card">
@@ -357,7 +407,7 @@ tr:hover td{background:rgba(88,166,255,.025)}
 document.getElementById('nav-css').textContent = NAV_CSS;
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
-let candidates = {}, staffList = {}, filt = 'all';
+let candidates = {}, staffList = {}, teacherList = {}, filt = 'all';
 
 function showTab(id, el) {
   document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
@@ -375,6 +425,7 @@ function login() {
     initCheckinQR();
     db.ref('candidates').on('value', s => { candidates = s.val() || {}; updateStats(); renderTable(); });
     db.ref('staff').on('value', s => { staffList = s.val() || {}; renderStaff(); });
+    db.ref('teachers').on('value', s => { teacherList = s.val() || {}; renderTeachers(); });
     document.getElementById('er').style.display = 'none';
   } else { document.getElementById('er').style.display = 'block'; }
 }
@@ -632,6 +683,72 @@ function renderStaff() {
 
 function delStaff(id, name) {
   if (confirm('確定刪除工作人員「' + name + '」？')) db.ref('staff/' + id).remove();
+}
+
+// ── 老師管理 ──────────────────────────────────────────
+function addTeacher(type) {
+  const nameEl = type === 'interview' ? 'iv-name' : 'pr-name';
+  const pwEl   = type === 'interview' ? 'iv-pw'   : 'pr-pw';
+  const msgEl  = type === 'interview' ? 'iv-msg'  : 'pr-msg';
+  const name = document.getElementById(nameEl).value.trim();
+  const pw   = document.getElementById(pwEl).value.trim();
+  const room = type === 'interview' ? 'CM316' : document.getElementById('pr-room').value;
+  const msg  = document.getElementById(msgEl);
+  if (!name || !pw) { showMsg(msg, 'r', '請填寫姓名和密碼'); return; }
+  const allTeachers = Object.values(teacherList);
+  if (allTeachers.find(t => t.password === pw)) { showMsg(msg, 'r', '此密碼已被使用，請換一個'); return; }
+  const id = 'teacher_' + Date.now();
+  db.ref('teachers/' + id).set({ id, name, password: pw, room, type, createdAt: Date.now() }).then(() => {
+    document.getElementById(nameEl).value = '';
+    document.getElementById(pwEl).value = '';
+    showMsg(msg, 'g', '✅ 老師已新增，立即生效');
+    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+  });
+}
+
+function renderTeachers() {
+  renderTeacherList('interview', 'iv-teacher-list');
+  renderTeacherList('practical', 'pr-teacher-list');
+}
+
+function renderTeacherList(type, elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const defaults = Object.entries(TEACHERS)
+    .filter(([, t]) => t.type === type)
+    .map(([pw, t]) => ({ id: 'default_' + pw, name: t.name, password: pw, room: t.room, type, isDefault: true }));
+  const dynamic = Object.values(teacherList).filter(t => t.type === type);
+  const defaultsFiltered = defaults.filter(d => !dynamic.find(dyn => dyn.name === d.name));
+  const list = [...defaultsFiltered, ...dynamic].sort((a, b) => (a.room || '').localeCompare(b.room || '') || a.name.localeCompare(b.name));
+  if (!list.length) { el.innerHTML = '<p style="color:var(--m);font-size:13px;text-align:center;padding:24px">尚無老師資料</p>'; return; }
+  const roomCls = { CM316: 'rt-216', CM216: 'rt-216', CM214: 'rt-214', CM212: 'rt-212' };
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">姓名</th>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">密碼</th>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">教室</th>
+      <th style="color:var(--m);font-size:11px;padding:6px 10px;border-bottom:1px solid var(--b)"></th>
+    </tr></thead>
+    <tbody>${list.map(t => `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)">
+        <strong>${t.name}</strong>${t.isDefault ? '<span style="font-size:10px;color:var(--m);margin-left:6px">(內建)</span>' : ''}
+      </td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4);font-family:\'JetBrains Mono\',monospace;color:var(--y)">${t.password}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><span class="room-tag ${roomCls[t.room] || ''}">${t.room}</span></td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)">
+        ${t.isDefault ? '<span style="font-size:11px;color:var(--m)">內建</span>' : `<button class="btn br bsm" onclick="delTeacher('${t.id}','${t.name}')">刪除</button>`}
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function delTeacher(id, name) {
+  if (confirm('確定刪除老師「' + name + '」？')) db.ref('teachers/' + id).remove();
+}
+
+function showMsg(el, type, txt) {
+  el.style.display = 'block';
+  el.innerHTML = `<span style="color:var(--${type === 'g' ? 'g' : 'r'})">${txt}</span>`;
 }
 
 function clearQueue() {
