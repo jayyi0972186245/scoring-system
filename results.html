@@ -48,9 +48,35 @@ tr:hover td{background:rgba(96,165,250,.04)}
 .teacher-line{font-size:10px;color:var(--m);margin-top:2px}
 .no-data{text-align:center;padding:56px;color:var(--m)}
 @media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.toolbar{flex-direction:column}}
+.lw{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.lc{background:var(--s);border:1px solid var(--b);border-radius:20px;padding:36px 28px;width:100%;max-width:380px;text-align:center}
+.lc .ico{font-size:48px;margin-bottom:12px}
+.lc h1{font-size:20px;font-weight:700;color:var(--ac);margin-bottom:6px}
+.lc p{color:var(--m);font-size:13px;margin-bottom:22px;line-height:1.6}
+.pw-inp{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:11px 14px;color:var(--t);font-size:15px;font-family:inherit;outline:none;text-align:center;letter-spacing:.15em}
+.pw-inp:focus{border-color:var(--ac)}
+.btn-login{width:100%;background:var(--ac);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px;transition:.12s}
+.btn-login:hover{filter:brightness(1.1)}
+.err-login{color:var(--r);font-size:12px;margin-top:8px;display:none}
 </style>
 </head>
 <body>
+
+<!-- 登入頁 -->
+<div class="lw" id="LP">
+  <div class="lc">
+    <div class="ico">📊</div>
+    <h1>成績總表</h1>
+    <p>僅限管理員查看<br>請輸入管理員密碼</p>
+    <input class="pw-inp" type="password" id="pw" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="err-login" id="err-login">密碼錯誤，請向管理員確認</div>
+    <button class="btn-login" onclick="doLogin()">登入</button>
+    <a href="index.html" style="display:block;margin-top:14px;font-size:12px;color:var(--m);text-decoration:none">← 返回管理後台</a>
+  </div>
+</div>
+
+<!-- 主畫面 -->
+<div id="APP" style="display:none">
 <div id="NAV"></div>
 <div class="wrap">
   <div class="stats">
@@ -83,15 +109,41 @@ tr:hover td{background:rgba(96,165,250,.04)}
     </table>
   </div>
 </div>
+</div><!-- /APP -->
 
 <script>
 document.getElementById('nav-css').textContent = NAV_CSS;
-document.getElementById('NAV').innerHTML = buildNav('results');
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
 let candidates = {}, filt = 'all', sortKey = 'regNo', sortDir = 1;
+let currentUser = null;
 
-db.ref('candidates').on('value', s => { candidates = s.val() || {}; updateStats(); render(); });
+// ── 登入（僅限管理員）────────────────────────────
+function doLogin() {
+  const pw = document.getElementById('pw').value.trim();
+  document.getElementById('err-login').style.display = 'none';
+  if (TEACHERS[pw]?.type === 'admin') {
+    currentUser = TEACHERS[pw];
+    startApp();
+  } else {
+    document.getElementById('err-login').style.display = 'block';
+  }
+}
+
+function startApp() {
+  document.getElementById('LP').style.display = 'none';
+  document.getElementById('APP').style.display = 'block';
+  document.getElementById('NAV').innerHTML = buildNav('results', currentUser.name, 'doLogout()');
+  db.ref('candidates').on('value', s => { candidates = s.val() || {}; updateStats(); render(); });
+}
+
+function doLogout() {
+  document.getElementById('APP').style.display = 'none';
+  document.getElementById('LP').style.display = 'flex';
+  document.getElementById('pw').value = '';
+  db.ref('candidates').off();
+  candidates = {}; currentUser = null;
+}
 
 function avg(o) { if (!o) return null; const v = Object.values(o).filter(x => x !== null && x !== undefined && x !== ''); return v.length ? v.reduce((a, b) => a + Number(b), 0) / v.length : null; }
 function status(c) { const iv = avg(c.interviewScores) !== null, pr = avg(c.practicalScores) !== null; return iv && pr ? 'done' : iv || pr ? 'partial' : 'none'; }
