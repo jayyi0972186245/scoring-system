@@ -145,7 +145,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 document.getElementById('nav-css').textContent = NAV_CSS;
 firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
-let myRoom = '', myName = '', scanner = null, hist = [];
+let myRoom = '', myName = '', scanner = null, hist = [], candidatesCache = {};
 
 function doLogin() {
   const pw = document.getElementById('pw').value.trim();
@@ -161,6 +161,8 @@ function doLogin() {
     document.getElementById('NAV').innerHTML = buildNav('scan', myName, 'doLogout()');
     document.getElementById('room-label').textContent = myRoom;
     document.getElementById('staff-label').textContent = myName + ' 工作人員';
+    // 登入後訂閱考生資料，存入記憶體，手動查詢直接查快取不需額外請求
+    db.ref('candidates').on('value', snap => { candidatesCache = snap.val() || {}; });
   }).catch(() => { document.getElementById('err-login').style.display = 'block'; });
 }
 
@@ -168,7 +170,8 @@ function doLogout() {
   document.getElementById('APP').style.display = 'none';
   document.getElementById('LP').style.display = 'flex';
   document.getElementById('pw').value = '';
-  myRoom = ''; myName = ''; hist = [];
+  myRoom = ''; myName = ''; hist = []; candidatesCache = {};
+  db.ref('candidates').off();
   if (scanner) stopScan();
 }
 
@@ -213,48 +216,39 @@ function processManualByRegNo() {
 
   if (!q || q.length === 0) return;
 
-  // 從 Firebase 取全部考生，精確比對末三碼
-  db.ref('candidates').once('value').then(snap => {
-    const all = snap.val() || {};
-    // 精確比對：序號字串的末 q.length 碼 === q，且序號長度 >= q.length
-    const matched = Object.values(all).filter(c => {
-      const reg = String(c.regNo || '');
-      return reg.length >= q.length && reg.slice(-q.length) === q;
-    });
-
-    if (matched.length === 0) {
-      const err = document.getElementById('manual-err');
-      err.textContent = `找不到序號末三碼為「${q}」的考生`;
-      err.style.display = 'block';
-      return;
-    }
-
-    if (matched.length === 1) {
-      // 唯一結果，直接指派
-      processCandidate(matched[0].id);
-      document.getElementById('manual-regno').value = '';
-      return;
-    }
-
-    // 多筆符合（理論上不應發生，但保險顯示選單）
-    const box = document.getElementById('manual-matches');
-    box.style.display = 'block';
-    box.innerHTML = `<p style="font-size:12px;color:var(--y);margin-bottom:8px">⚠️ 找到 ${matched.length} 筆，請選擇正確考生：</p>` +
-      matched.map(c => `
-        <div onclick="processCandidate('${c.id}');document.getElementById('manual-regno').value='';document.getElementById('manual-matches').style.display='none';"
-          style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s);border:1px solid var(--b);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:.12s"
-          onmouseover="this.style.borderColor='var(--ac)'" onmouseout="this.style.borderColor='var(--b)'">
-          <div>
-            <strong style="font-size:14px">${c.name}</strong>
-            <span style="color:var(--m);font-size:12px;margin-left:8px">序號 ${c.regNo}</span>
-          </div>
-          <span style="color:var(--ac);font-size:18px">›</span>
-        </div>`).join('');
-  }).catch(() => {
-    const err = document.getElementById('manual-err');
-    err.textContent = '查詢失敗，請確認網路連線';
-    err.style.display = 'block';
+  // 直接查登入時已訂閱的記憶體快取，不發送額外 Firebase 請求
+  const matched = Object.values(candidatesCache).filter(c => {
+    const reg = String(c.regNo || '');
+    return reg.length >= q.length && reg.slice(-q.length) === q;
   });
+
+  if (matched.length === 0) {
+    const err = document.getElementById('manual-err');
+    err.textContent = `找不到序號末三碼為「${q}」的考生`;
+    err.style.display = 'block';
+    return;
+  }
+
+  if (matched.length === 1) {
+    processCandidate(matched[0].id);
+    document.getElementById('manual-regno').value = '';
+    return;
+  }
+
+  // 多筆符合時顯示選單
+  const box = document.getElementById('manual-matches');
+  box.style.display = 'block';
+  box.innerHTML = `<p style="font-size:12px;color:var(--y);margin-bottom:8px">⚠️ 找到 ${matched.length} 筆，請選擇正確考生：</p>` +
+    matched.map(c => `
+      <div onclick="processCandidate('${c.id}');document.getElementById('manual-regno').value='';document.getElementById('manual-matches').style.display='none';"
+        style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s);border:1px solid var(--b);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:.12s"
+        onmouseover="this.style.borderColor='var(--ac)'" onmouseout="this.style.borderColor='var(--b)'">
+        <div>
+          <strong style="font-size:14px">${c.name}</strong>
+          <span style="color:var(--m);font-size:12px;margin-left:8px">序號 ${c.regNo}</span>
+        </div>
+        <span style="color:var(--ac);font-size:18px">›</span>
+      </div>`).join('');
 }
 
 function processCandidate(id) {
@@ -295,7 +289,7 @@ function processCandidate(id) {
     hist.unshift({ name: c.name, regNo: c.regNo, time: new Date().toLocaleTimeString(), isDup });
     if (hist.length > 10) hist.pop();
     renderHist();
-    document.getElementById('manual-id').value = '';
+    document.getElementById('manual-regno').value = '';
     history.replaceState(null, '', location.pathname);
   }).catch(() => alert('連線失敗，請確認網路'));
 }
