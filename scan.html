@@ -254,44 +254,39 @@ function processManualByRegNo() {
 function processCandidate(id) {
   if (!myRoom) { alert('請先登入'); return; }
 
-  db.ref('candidates/' + id).once('value').then(snap => {
-    const c = snap.val();
-    if (!c) { alert('找不到此考生，請確認QR碼正確'); return; }
+  // 直接從記憶體快取取得考生資料，不發送額外 Firebase 讀取請求
+  const c = candidatesCache[id];
+  if (!c) { alert('找不到此考生，請確認QR碼正確'); return; }
 
-    const prevRoom = c.assignedRoom || null;
+  const prevRoom = c.assignedRoom || null;
 
-    // 已在其他教室 → 確認後才改
-    if (prevRoom && prevRoom !== myRoom) {
-      if (!confirm(`⚠️ 此考生（${c.name}）已指派到 ${prevRoom}。\n確定改為 ${myRoom} 嗎？`)) return;
-      // 清掉舊教室的佇列記錄
-      db.ref('practicalQueue/' + prevRoom + '/' + id).remove();
-      // 清掉舊教室的評分（考生換教室，重新評分）
-      db.ref('candidates/' + id + '/practicalScores').remove();
-    }
+  // 已在其他教室 → 確認後才改
+  if (prevRoom && prevRoom !== myRoom) {
+    if (!confirm(`⚠️ 此考生（${c.name}）已指派到 ${prevRoom}。\n確定改為 ${myRoom} 嗎？`)) return;
+    db.ref('practicalQueue/' + prevRoom + '/' + id).remove();
+    db.ref('candidates/' + id + '/practicalScores').remove();
+  }
 
-    const isDup = (prevRoom === myRoom); // 同一教室重複掃
+  const isDup = (prevRoom === myRoom);
 
-    // 寫入教室指派（不重複寫不影響）
-    db.ref('candidates/' + id).update({ assignedRoom: myRoom, assignedAt: Date.now() });
+  // 寫入 Firebase（只寫不讀，不加 catch alert）
+  db.ref('candidates/' + id).update({ assignedRoom: myRoom, assignedAt: Date.now() });
+  db.ref('practicalQueue/' + myRoom + '/' + id).set({
+    candidateId: id,
+    name: c.name,
+    school: c.school || '',
+    dept: c.dept || '',
+    regNo: c.regNo,
+    assignedAt: Date.now(),
+    scannedBy: myName
+  });
 
-    // 用 candidateId 當唯一 key → 重複掃只覆蓋，不產生重複記錄
-    db.ref('practicalQueue/' + myRoom + '/' + id).set({
-      candidateId: id,
-      name: c.name,
-      school: c.school || '',
-      dept: c.dept || '',
-      regNo: c.regNo,
-      assignedAt: Date.now(),
-      scannedBy: myName
-    });
-
-    showResult(c, isDup, prevRoom);
-    hist.unshift({ name: c.name, regNo: c.regNo, time: new Date().toLocaleTimeString(), isDup });
-    if (hist.length > 10) hist.pop();
-    renderHist();
-    document.getElementById('manual-regno').value = '';
-    history.replaceState(null, '', location.pathname);
-  }).catch(() => alert('連線失敗，請確認網路'));
+  showResult(c, isDup, prevRoom);
+  hist.unshift({ name: c.name, regNo: c.regNo, time: new Date().toLocaleTimeString(), isDup });
+  if (hist.length > 10) hist.pop();
+  renderHist();
+  document.getElementById('manual-regno').value = '';
+  history.replaceState(null, '', location.pathname);
 }
 
 function showResult(c, isDup, prevRoom) {
