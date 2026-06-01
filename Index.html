@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理後台 — 評分系統</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d1117;--s:#161b22;--s2:#21262d;--b:#30363d;--ac:#58a6ff;--ac2:#bc8cff;--g:#3fb950;--y:#e3b341;--r:#f85149;--t:#e6edf3;--m:#8b949e}
+body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);min-height:100vh}
+/* Login */
+.lw{display:flex;align-items:center;justify-content:center;min-height:100vh}
+.lc{background:var(--s);border:1px solid var(--b);border-radius:20px;padding:40px;width:340px;text-align:center}
+.lc h1{font-size:20px;font-weight:700;color:var(--ac);margin-bottom:6px}
+.lc p{color:var(--m);font-size:13px;margin-bottom:24px}
+.lc input{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:11px 14px;color:var(--t);font-size:15px;font-family:inherit;outline:none;text-align:center;letter-spacing:.15em}
+.lc input:focus{border-color:var(--ac)}
+.lc .links{margin-top:16px;font-size:12px;color:var(--m)}
+.lc .links a{color:var(--ac);text-decoration:none}
+/* Buttons */
+.btn{cursor:pointer;font-family:inherit;font-weight:600;border:none;border-radius:8px;padding:9px 16px;font-size:13px;transition:.12s}
+.bp{background:var(--ac);color:#000;width:100%;margin-top:12px;padding:11px}
+.bp:hover{filter:brightness(1.1)}
+.bg{background:var(--g);color:#fff}.bg:hover{filter:brightness(1.1)}
+.ba{background:var(--ac);color:#000}.ba:hover{filter:brightness(1.1)}
+.bo{background:transparent;border:1px solid var(--b);color:var(--m)}.bo:hover{border-color:var(--ac);color:var(--ac)}
+.br{background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.25);color:var(--r)}.br:hover{background:rgba(248,81,73,.2)}
+.bsm{padding:5px 10px;font-size:11px}
+/* Layout */
+.wrap{max-width:1280px;margin:0 auto;padding:20px 16px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px}
+.st{background:var(--s);border:1px solid var(--b);border-radius:12px;padding:14px;text-align:center}
+.st .n{font-size:24px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--ac)}
+.st .l{font-size:11px;color:var(--m);margin-top:2px}
+.st-click{cursor:pointer;transition:.15s}
+.st-click:hover{border-color:var(--ac);transform:translateY(-2px)}
+.grid2{display:grid;grid-template-columns:310px 1fr;gap:16px;align-items:start}
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--b);margin-bottom:20px}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;color:var(--m);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:.12s;white-space:nowrap}
+.tab:hover{color:var(--t)}
+.tab.on{color:var(--ac);border-color:var(--ac)}
+.pane{display:none}.pane.on{display:block}
+/* Staff */
+.staff-grid{display:grid;grid-template-columns:280px 1fr;gap:16px;align-items:start}
+.sel{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:9px 12px;color:var(--t);font-size:13px;outline:none;font-family:inherit}
+.sel:focus{border-color:var(--ac)}
+.room-tag{font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600;display:inline-block}
+.rt-216{background:rgba(88,166,255,.12);color:var(--ac)}
+.rt-214{background:rgba(188,140,255,.12);color:var(--ac2)}
+.rt-212{background:rgba(63,185,80,.12);color:var(--g)}
+.card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:20px;margin-bottom:14px}
+.ch2{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;font-weight:500}
+/* Inputs */
+.inp{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:9px 12px;color:var(--t);font-size:13px;outline:none;font-family:inherit}
+.inp:focus{border-color:var(--ac)}
+/* Drop zone */
+.dz{border:2px dashed var(--b);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:.15s}
+.dz:hover,.dz.drag{border-color:var(--ac);background:rgba(88,166,255,.04)}
+.dz-icon{font-size:28px;margin-bottom:8px}
+.dz p{color:var(--m);font-size:13px}
+.dz small{font-size:11px;color:var(--m2,#6e7681);display:block;margin-top:4px}
+/* Table */
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.srch{flex:1;min-width:120px}
+.ftab{padding:4px 10px;border-radius:14px;background:var(--s2);border:1px solid var(--b);color:var(--m);cursor:pointer;font-size:11px;font-weight:500;transition:.12s}
+.ftab.on{background:var(--ac);color:#000;border-color:var(--ac)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{color:var(--m);font-weight:500;text-align:left;padding:7px 10px;border-bottom:1px solid var(--b);font-size:11px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4);vertical-align:middle}
+tr:hover td{background:rgba(88,166,255,.025)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:11px}
+.badge{font-size:10px;padding:2px 7px;border-radius:8px;font-weight:600;white-space:nowrap;display:inline-block}
+.bdg{background:rgba(63,185,80,.12);color:var(--g)}
+.bdy{background:rgba(227,179,65,.12);color:var(--y)}
+.bdm{background:var(--s2);color:var(--m)}
+.bdb{background:rgba(88,166,255,.12);color:var(--ac)}
+/* QR Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.show{display:flex}
+.modal{background:var(--s);border:1px solid var(--b);border-radius:18px;padding:28px;text-align:center;min-width:280px}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:4px}
+.modal p{color:var(--m);font-size:12px;margin-bottom:14px}
+#qr-canvas{background:#fff;padding:12px;border-radius:10px;display:inline-block;margin-bottom:14px}
+@media(max-width:900px){.stats{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr}}
+@media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+<style id="nav-css"></style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="lw" id="LP">
+  <div class="lc">
+    <h1>🏫 評分管理系統</h1>
+    <p>請輸入管理員密碼</p>
+    <input type="password" id="pw" placeholder="管理員密碼" onkeydown="if(event.key==='Enter')login()">
+    <div id="er" style="color:var(--r);font-size:12px;margin-top:6px;display:none">密碼錯誤</div>
+    <button class="btn bp" onclick="login()">登入管理後台</button>
+    <div class="links">
+      其他頁面：
+      <a href="checkin.html">學生報到</a> |
+      <a href="scan.html">工作人員</a> |
+      <a href="interview.html">面試評分</a> |
+      <a href="practical.html">術科評分</a>
+    </div>
+  </div>
+</div>
+
+<!-- App -->
+<div id="APP" style="display:none">
+  <div id="NAV"></div>
+  <div class="wrap">
+    <div class="stats">
+      <div class="st st-click" onclick="showStatDetail('all')"><div class="n" id="s0">0</div><div class="l">總考生</div></div>
+      <div class="st st-click" onclick="showStatDetail('checkedin')"><div class="n" id="s1">0</div><div class="l">已報到</div></div>
+      <div class="st st-click" onclick="showStatDetail('iv')"><div class="n" id="s2">0</div><div class="l">面試完成</div></div>
+      <div class="st st-click" onclick="showStatDetail('pr')"><div class="n" id="s3">0</div><div class="l">術科完成</div></div>
+      <div class="st st-click" onclick="showStatDetail('done')"><div class="n" id="s4">0</div><div class="l">全部完成</div></div>
+    </div>
+
+    <!-- Stats Detail Modal -->
+    <div id="stat-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;align-items:flex-start;justify-content:center;padding:60px 16px;overflow-y:auto;backdrop-filter:blur(4px)" onclick="if(event.target===this)closeStatModal()">
+      <div style="background:var(--s);border:1px solid var(--b);border-radius:18px;width:100%;max-width:760px;overflow:hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--b)">
+          <div>
+            <div style="font-size:16px;font-weight:700" id="stat-modal-title">—</div>
+            <div style="font-size:12px;color:var(--m);margin-top:2px" id="stat-modal-count">—</div>
+          </div>
+          <button onclick="closeStatModal()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:13px;font-family:inherit">關閉</button>
+        </div>
+        <div style="overflow-x:auto;max-height:60vh;overflow-y:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead id="stat-modal-thead" style="position:sticky;top:0;background:var(--s2)"></thead>
+            <tbody id="stat-modal-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab on" onclick="showTab('t-main',this)">👥 考生名單</div>
+      <div class="tab" onclick="showTab('t-staff-mgmt',this)">👷 工作人員管理</div>
+      <div class="tab" onclick="showTab('t-scan-tab',this)">📱 工作人員掃碼</div>
+      <div class="tab" onclick="showTab('t-iv-teacher',this)">🎤 面試老師管理</div>
+      <div class="tab" onclick="showTab('t-pr-teacher',this)">✏️ 術科老師管理</div>
+      <div class="tab" onclick="showTab('t-tools',this)">🛠️ 工具</div>
+    </div>
+
+    <!-- Tab: 考生名單 -->
+    <div class="pane on" id="t-main">
+    <div class="grid2">
+      <!-- Left panel -->
+      <div>
+        <!-- Import Excel -->
+        <div class="card">
+          <div class="ch2">📥 匯入考生 Excel</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:12px">自動讀取欄位：報名序號、姓名、身分證末四碼、手機末三碼、畢業系別、就讀學校</p>
+          <div class="dz" id="dz" onclick="document.getElementById('fi').click()"
+            ondragover="event.preventDefault();this.classList.add('drag')"
+            ondragleave="this.classList.remove('drag')"
+            ondrop="onDrop(event)">
+            <div class="dz-icon">📂</div>
+            <p>點擊或拖曳 Excel 檔案</p>
+            <small>.xlsx / .xls 格式</small>
+          </div>
+          <input type="file" id="fi" accept=".xlsx,.xls" style="display:none" onchange="onFile(this.files[0])">
+          <div id="import-msg" style="margin-top:10px;font-size:13px;display:none"></div>
+        </div>
+
+        <!-- Checkin QR -->
+        <div class="card">
+          <div class="ch2">✅ 學生報到 QR Code</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">列印後貼在入口，學生掃描此QR Code即可報到</p>
+          <div style="text-align:center">
+            <div id="checkin-qr" style="background:#fff;padding:12px;border-radius:10px;display:inline-block"></div>
+          </div>
+          <button class="btn bo" style="width:100%;margin-top:12px" onclick="printCheckinQR()">🖨️ 列印報到QR Code</button>
+        </div>
+
+        <!-- Danger -->
+        <div class="card">
+          <div class="ch2">⚠️ 危險操作</div>
+          <button class="btn br" style="width:100%" onclick="clearAll()">清除所有考生資料</button>
+        </div>
+      </div>
+
+      <!-- Right: Candidates -->
+      <div class="card">
+        <div class="ch2">👥 考生名單</div>
+        <div class="toolbar">
+          <input class="inp srch" id="srch" placeholder="🔍 搜尋姓名、序號、學校..." oninput="renderTable()">
+          <div class="ftab on" onclick="setFilt('all',this)">全部</div>
+          <div class="ftab" onclick="setFilt('checkedin',this)">已報到</div>
+          <div class="ftab" onclick="setFilt('not',this)">未報到</div>
+          <div class="ftab" onclick="setFilt('done',this)">全完成</div>
+          <button class="btn bo bsm" onclick="printAllQR()">🖨️ QR</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr>
+              <th>序號</th><th>姓名</th><th>身分證末4</th><th>手機末3</th>
+              <th>系別</th><th>學校</th>
+              <th>報到</th><th>面試</th><th>術科</th><th>教室</th><th>操作</th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    </div><!-- /t-main -->
+
+    <!-- Tab: 工作人員管理 -->
+    <div class="pane" id="t-staff-mgmt">
+      <div class="staff-grid">
+        <!-- 新增工作人員 -->
+        <div class="card">
+          <div class="ch2">➕ 新增工作人員</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">
+            工作人員在術科教室門口使用，掃描考生QR碼後自動推送到該教室的評分老師畫面
+          </p>
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">姓名</label>
+          <input class="inp" id="st-name" placeholder="工作人員姓名" style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">登入密碼</label>
+          <input class="inp" id="st-pw" placeholder="自訂4-8位密碼" style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">負責教室</label>
+          <select class="sel" id="st-room" style="margin-bottom:14px">
+            <option value="CM216">CM216</option>
+            <option value="CM214">CM214</option>
+            <option value="CM212">CM212</option>
+          </select>
+          <button class="btn bg" style="width:100%" onclick="addStaff()">新增工作人員</button>
+          <div id="staff-msg" style="margin-top:8px;font-size:12px;display:none"></div>
+        </div>
+
+        <!-- 工作人員名單 -->
+        <div class="card">
+          <div class="ch2">👷 目前工作人員名單</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">
+            工作人員至 <strong style="color:var(--ac)">scan.html</strong> 頁面，選擇教室後輸入密碼登入
+          </p>
+          <div id="staff-list">
+            <p style="color:var(--m);font-size:13px;text-align:center;padding:24px">尚未新增工作人員</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /t-staff-mgmt -->
+
+    <!-- Tab: 工作人員掃碼 -->
+    <div class="pane" id="t-scan-tab">
+      <div style="max-width:480px">
+        <!-- 登入區 -->
+        <div id="scan-login-box" class="card">
+          <div class="ch2">📱 工作人員掃碼登入</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">請輸入工作人員密碼登入，系統將鎖定您負責的教室</p>
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">工作人員密碼</label>
+          <input class="inp" type="password" id="scan-pw" placeholder="輸入工作人員密碼" style="margin-bottom:10px" onkeydown="if(event.key==='Enter')scanLogin()">
+          <div id="scan-err" style="color:var(--r);font-size:12px;margin-bottom:8px;display:none">密碼錯誤，請向管理員確認</div>
+          <button class="btn bg" style="width:100%" onclick="scanLogin()">登入掃碼頁面</button>
+        </div>
+
+        <!-- 掃碼操作區（登入後顯示）-->
+        <div id="scan-app-box" style="display:none">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div>
+                <div style="font-size:15px;font-weight:700;color:var(--ac2)" id="scan-room-label">—</div>
+                <div style="font-size:12px;color:var(--m)" id="scan-staff-label">—</div>
+              </div>
+              <button class="btn bo bsm" onclick="scanLogout()">登出</button>
+            </div>
+
+            <!-- Mode tabs -->
+            <div style="display:flex;gap:6px;margin-bottom:14px">
+              <div class="ftab on" id="stab-cam" onclick="switchScanMode('camera',this)">📷 鏡頭掃描</div>
+              <div class="ftab" id="stab-man" onclick="switchScanMode('manual',this)">⌨️ 手動輸入</div>
+            </div>
+
+            <div id="scan-mode-camera">
+              <div id="tab-reader" style="border-radius:10px;overflow:hidden"></div>
+              <button class="btn ba" id="tab-start-btn" style="width:100%;margin-top:10px" onclick="tabStartScan()">▶ 開始掃描</button>
+              <button class="btn bo" id="tab-stop-btn" style="width:100%;margin-top:6px;display:none" onclick="tabStopScan()">■ 停止</button>
+            </div>
+            <div id="scan-mode-manual" style="display:none">
+              <p style="font-size:12px;color:var(--m);margin-bottom:8px">貼上考生ID（scan.html?id= 後面的部分）</p>
+              <div style="display:flex;gap:8px">
+                <input class="inp" id="tab-manual-id" placeholder="考生 ID" style="flex:1">
+                <button class="btn ba bsm" onclick="tabProcessManual()">送出</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Result -->
+          <div id="tab-result" class="card" style="display:none;text-align:center;border-color:var(--g)">
+            <div style="font-size:11px;font-weight:700;color:var(--g);margin-bottom:6px" id="tab-r-status">✅ 指派成功</div>
+            <div style="font-size:22px;font-weight:700;margin-bottom:4px" id="tab-r-name">—</div>
+            <div style="color:var(--m);font-size:13px;margin-bottom:10px" id="tab-r-no">—</div>
+            <div style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.2);border-radius:10px;padding:10px;margin-bottom:8px">
+              <div style="font-size:11px;color:var(--m);margin-bottom:2px">指派至教室</div>
+              <div style="font-size:32px;font-weight:700;color:var(--g);font-family:monospace" id="tab-r-room">—</div>
+              <div style="font-size:13px;color:var(--ac2)" id="tab-r-teachers">—</div>
+            </div>
+            <div style="font-size:12px;color:var(--m);white-space:pre-line" id="tab-r-info"></div>
+            <div style="font-size:12px;color:var(--g);margin-top:8px" id="tab-r-msg"></div>
+            <button onclick="tabResetResult()" class="btn bo" style="width:100%;margin-top:12px">繼續掃下一位 →</button>
+          </div>
+
+          <!-- History -->
+          <div class="card">
+            <div class="ch2">📋 本次指派記錄</div>
+            <div id="tab-hist"><p style="color:var(--m);font-size:12px;text-align:center;padding:8px">尚無記錄</p></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /t-scan-tab -->
+
+    <!-- Tab: 工具 -->
+    <!-- Tab: 面試老師管理 -->
+    <div class="pane" id="t-iv-teacher">
+      <div class="staff-grid">
+        <div class="card">
+          <div class="ch2">➕ 新增 / 修改面試老師</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">面試考場固定為 CM316，新增後老師使用此密碼登入面試評分頁面</p>
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">老師姓名</label>
+          <input class="inp" id="iv-name" placeholder="例：黃祥熙" style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">登入密碼</label>
+          <input class="inp" id="iv-pw" placeholder="數字或英數字皆可" style="margin-bottom:14px">
+          <button class="btn bg" style="width:100%" onclick="addTeacher('interview')">新增面試老師</button>
+          <div id="iv-msg" style="margin-top:8px;font-size:12px;display:none"></div>
+        </div>
+        <div class="card">
+          <div class="ch2">🎤 目前面試老師（CM316）</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">老師使用各自密碼至 <strong style="color:var(--ac)">interview.html</strong> 登入評分</p>
+          <div id="iv-teacher-list"><p style="color:var(--m);font-size:13px;text-align:center;padding:24px">載入中...</p></div>
+        </div>
+      </div>
+    </div><!-- /t-iv-teacher -->
+
+    <!-- Tab: 術科老師管理 -->
+    <div class="pane" id="t-pr-teacher">
+      <div class="staff-grid">
+        <div class="card">
+          <div class="ch2">➕ 新增 / 修改術科老師</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">新增後老師使用此密碼登入術科評分頁面，系統依教室分配</p>
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">老師姓名</label>
+          <input class="inp" id="pr-name" placeholder="例：蔡登茂" style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">登入密碼</label>
+          <input class="inp" id="pr-pw" placeholder="數字或英數字皆可" style="margin-bottom:10px">
+          <label style="font-size:12px;color:var(--m);display:block;margin-bottom:4px">負責教室</label>
+          <select class="sel" id="pr-room" style="margin-bottom:14px">
+            <option value="CM216">CM216</option>
+            <option value="CM214">CM214</option>
+            <option value="CM212">CM212</option>
+          </select>
+          <button class="btn bg" style="width:100%" onclick="addTeacher('practical')">新增術科老師</button>
+          <div id="pr-msg" style="margin-top:8px;font-size:12px;display:none"></div>
+        </div>
+        <div class="card">
+          <div class="ch2">✏️ 目前術科老師</div>
+          <p style="font-size:12px;color:var(--m);margin-bottom:14px">老師使用各自密碼至 <strong style="color:var(--ac)">practical.html</strong> 登入評分</p>
+          <div id="pr-teacher-list"><p style="color:var(--m);font-size:13px;text-align:center;padding:24px">載入中...</p></div>
+        </div>
+      </div>
+    </div><!-- /t-pr-teacher -->
+
+    <div class="pane" id="t-tools">
+      <div style="max-width:480px">
+        <div class="card">
+          <div class="ch2">🖨️ 列印工具</div>
+          <button class="btn bo" style="width:100%;margin-bottom:10px" onclick="printAllQR()">列印所有考生 QR Code</button>
+          <button class="btn bo" style="width:100%" onclick="printCheckinQR()">列印報到用 QR Code</button>
+        </div>
+        <div class="card">
+          <div class="ch2">📤 匯出</div>
+          <button class="btn bo" style="width:100%" onclick="exportCSV()">匯出成績 CSV</button>
+        </div>
+        <div class="card">
+          <div class="ch2">⚠️ 危險操作</div>
+          <button class="btn br" style="width:100%;margin-bottom:8px" onclick="clearQueue()">清除術科佇列（不刪考生）</button>
+          <button class="btn br" style="width:100%" onclick="clearAll()">清除所有考生資料</button>
+        </div>
+      </div>
+    </div><!-- /t-tools -->
+  </div>
+</div>
+
+<!-- QR Modal -->
+<div class="overlay" id="qrModal">
+  <div class="modal">
+    <h3 id="qm-name">—</h3>
+    <p id="qm-info">—</p>
+    <div id="qr-canvas"></div>
+    <button class="btn bo" onclick="document.getElementById('qrModal').classList.remove('show')">關閉</button>
+  </div>
+</div>
+
+<script>
+document.getElementById('nav-css').textContent = NAV_CSS;
+firebase.initializeApp(FIREBASE_CONFIG);
+const db = firebase.database();
+let candidates = {}, staffList = {}, teacherList = {}, filt = 'all';
+
+function showTab(id, el) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  el.classList.add('on');
+}
+
+function login() {
+  const pw = document.getElementById('pw').value.trim();
+  if (TEACHERS[pw]?.type === 'admin') {
+    document.getElementById('LP').style.display = 'none';
+    document.getElementById('APP').style.display = 'block';
+    document.getElementById('NAV').innerHTML = buildNav('index', '管理員', 'logout()');
+    initCheckinQR();
+    db.ref('candidates').on('value', s => { candidates = s.val() || {}; updateStats(); renderTable(); });
+    db.ref('staff').on('value', s => { staffList = s.val() || {}; renderStaff(); });
+    db.ref('teachers').on('value', s => {
+      teacherList = s.val() || {};
+      renderTeachers();
+    });
+    // 獨立檢查是否需要 seed，不影響登入流程
+    db.ref('teachers').once('value').then(s => {
+      if (!s.val() || Object.keys(s.val()).length === 0) seedBuiltinTeachers();
+    });
+    document.getElementById('er').style.display = 'none';
+  } else { document.getElementById('er').style.display = 'block'; }
+}
+
+function seedBuiltinTeachers() {
+  const batch = {};
+  Object.entries(TEACHERS).forEach(([pw, t]) => {
+    if (t.type === 'interview' || t.type === 'practical') {
+      const id = 'teacher_builtin_' + pw;
+      batch[id] = { id, name: t.name, password: pw, room: t.room, type: t.type, createdAt: Date.now() };
+    }
+  });
+  db.ref('teachers').update(batch);
+}
+function logout() {
+  document.getElementById('APP').style.display = 'none';
+  document.getElementById('LP').style.display = 'flex';
+  document.getElementById('pw').value = '';
+}
+
+function avg(o) {
+  if (!o) return null;
+  const v = Object.values(o).filter(x => x !== null && x !== undefined && x !== '');
+  return v.length ? v.reduce((a, b) => a + Number(b), 0) / v.length : null;
+}
+
+function updateStats() {
+  const list = Object.values(candidates);
+  document.getElementById('s0').textContent = list.length;
+  document.getElementById('s1').textContent = list.filter(c => c.checkedIn).length;
+  document.getElementById('s2').textContent = list.filter(c => avg(c.interviewScores) !== null).length;
+  document.getElementById('s3').textContent = list.filter(c => avg(c.practicalScores) !== null).length;
+  document.getElementById('s4').textContent = list.filter(c => avg(c.interviewScores) !== null && avg(c.practicalScores) !== null).length;
+}
+
+function closeStatModal() {
+  document.getElementById('stat-modal').style.display = 'none';
+}
+
+function showStatDetail(type) {
+  const all = Object.values(candidates).sort((a, b) => String(a.regNo || '').localeCompare(String(b.regNo || '')));
+  const titles = { all: '全部考生', checkedin: '已報到考生', iv: '面試完成考生', pr: '術科完成考生', done: '全部完成考生' };
+
+  let list;
+  if (type === 'all')       list = all;
+  if (type === 'checkedin') list = all.filter(c => c.checkedIn);
+  if (type === 'iv')        list = all.filter(c => avg(c.interviewScores) !== null);
+  if (type === 'pr')        list = all.filter(c => avg(c.practicalScores) !== null);
+  if (type === 'done')      list = all.filter(c => avg(c.interviewScores) !== null && avg(c.practicalScores) !== null);
+
+  document.getElementById('stat-modal-title').textContent = titles[type];
+  document.getElementById('stat-modal-count').textContent = `共 ${list.length} 位考生`;
+
+  // 欄位依類型不同
+  const showIv = (type === 'iv' || type === 'done' || type === 'all');
+  const showPr = (type === 'pr' || type === 'done' || type === 'all');
+
+  // 表頭
+  document.getElementById('stat-modal-thead').innerHTML = `<tr>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">序號</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500">姓名</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500">報到</th>
+    ${showIv ? `
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">面試考場</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">面試成績</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">面試老師</th>` : ''}
+    ${showPr ? `
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">術科考場</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">術科成績</th>
+    <th style="padding:9px 14px;text-align:left;font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.05em;font-weight:500;white-space:nowrap">術科老師</th>` : ''}
+  </tr>`;
+
+  // 表格內容
+  const noData = '<span style="color:var(--m);font-size:11px">—</span>';
+  document.getElementById('stat-modal-tbody').innerHTML = list.map(c => {
+    const ivAvg = avg(c.interviewScores);
+    const prAvg = avg(c.practicalScores);
+    const ivTeachers = Object.keys(c.interviewScores || {}).join('、') || '—';
+    const prTeachers = Object.keys(c.practicalScores || {}).join('、') || '—';
+
+    return `<tr style="border-bottom:1px solid rgba(48,54,61,.5)">
+      <td style="padding:10px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--m)">${c.regNo || ''}</td>
+      <td style="padding:10px 14px;font-weight:600">${c.name || ''}</td>
+      <td style="padding:10px 14px">${c.checkedIn
+        ? '<span style="font-size:11px;background:rgba(63,185,80,.12);color:var(--g);padding:2px 7px;border-radius:6px;font-weight:600">✓ 已報到</span>'
+        : '<span style="font-size:11px;color:var(--m)">未報到</span>'}</td>
+      ${showIv ? `
+      <td style="padding:10px 14px"><span style="font-size:12px;font-weight:600;color:var(--ac)">CM316</span></td>
+      <td style="padding:10px 14px;font-family:'JetBrains Mono',monospace;font-weight:700;color:${ivAvg !== null ? 'var(--g)' : 'var(--m)'}">${ivAvg !== null ? ivAvg.toFixed(1) : '—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--m)">${ivAvg !== null ? ivTeachers : '—'}</td>` : ''}
+      ${showPr ? `
+      <td style="padding:10px 14px"><span style="font-size:12px;font-weight:600;color:var(--ac2)">${c.assignedRoom || '—'}</span></td>
+      <td style="padding:10px 14px;font-family:'JetBrains Mono',monospace;font-weight:700;color:${prAvg !== null ? 'var(--g)' : 'var(--m)'}">${prAvg !== null ? prAvg.toFixed(1) : '—'}</td>
+      <td style="padding:10px 14px;font-size:12px;color:var(--m)">${prAvg !== null ? prTeachers : '—'}</td>` : ''}
+    </tr>`;
+  }).join('');
+
+  const modal = document.getElementById('stat-modal');
+  modal.style.display = 'flex';
+}
+
+function setFilt(f, el) {
+  filt = f;
+  document.querySelectorAll('.ftab').forEach(t => t.classList.toggle('on', t === el));
+  renderTable();
+}
+
+function renderTable() {
+  let list = Object.values(candidates).filter(c => {
+    if (!matchSearch(c, document.getElementById('srch').value)) return false;
+    if (filt === 'checkedin') return !!c.checkedIn;
+    if (filt === 'not') return !c.checkedIn;
+    if (filt === 'done') return avg(c.interviewScores) !== null && avg(c.practicalScores) !== null;
+    return true;
+  }).sort((a, b) => String(a.regNo || '').localeCompare(String(b.regNo || '')));
+
+  const tbody = document.getElementById('tbody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:32px;color:var(--m)">沒有符合的考生</td></tr>'; return; }
+
+  tbody.innerHTML = list.map(c => {
+    const iv = avg(c.interviewScores), pr = avg(c.practicalScores);
+    return `<tr>
+      <td class="mono">${c.regNo || ''}</td>
+      <td><strong>${c.name || ''}</strong></td>
+      <td class="mono">${c.idLast4 || '—'}</td>
+      <td class="mono">${c.phoneLast3 || '—'}</td>
+      <td style="font-size:11px;max-width:90px">${c.dept || '—'}</td>
+      <td style="font-size:11px;max-width:100px">${c.school || '—'}</td>
+      <td style="white-space:nowrap">${c.checkedIn
+        ? `<span class="badge bdg">✓ 已報到</span>
+           <button class="btn br bsm" style="margin-left:4px" onclick="cancelCheckin('${c.id}','${c.name}')">取消</button>`
+        : `<button class="btn bg bsm" onclick="manualCheckin('${c.id}')">報到</button>`}</td>
+      <td>${iv !== null ? `<span class="badge bdb">${iv.toFixed(1)}</span>` : '<span class="badge bdm">未評</span>'}</td>
+      <td>${pr !== null ? `<span class="badge bdb">${pr.toFixed(1)}</span>` : '<span class="badge bdm">未評</span>'}</td>
+      <td>${c.assignedRoom ? `<span class="badge bdy">${c.assignedRoom}</span>` : '<span style="color:var(--m);font-size:11px">—</span>'}</td>
+      <td style="display:flex;gap:4px">
+        <button class="btn bo bsm" onclick="showQR('${c.id}')">QR</button>
+        <button class="btn br bsm" onclick="delC('${c.id}')">刪</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function manualCheckin(id) { db.ref('candidates/' + id).update({ checkedIn: true, checkinTime: Date.now(), checkinMethod: 'manual' }); }
+function cancelCheckin(id, name) {
+  if (confirm('確定取消「' + name + '」的報到狀態？')) {
+    db.ref('candidates/' + id).update({ checkedIn: false, checkinTime: null, checkinMethod: null });
+  }
+}
+function delC(id) {
+  if (confirm('確定刪除此考生？')) {
+    db.ref('candidates/' + id).remove();
+    // 同時從所有教室佇列移除此考生
+    PRACTICAL_ROOMS.forEach(room => db.ref('practicalQueue/' + room + '/' + id).remove());
+  }
+}
+function clearAll() {
+  if (confirm('確定清除所有考生？') && confirm('再次確認：清除全部資料？')) {
+    db.ref('candidates').remove();
+    db.ref('practicalQueue').remove(); // 同時清除術科佇列
+  }
+}
+
+// Excel
+function onDrop(e) { e.preventDefault(); document.getElementById('dz').classList.remove('drag'); onFile(e.dataTransfer.files[0]); }
+function onFile(file) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      let ok = 0, skip = 0; const batch = {};
+      rows.forEach(row => {
+        const regNo = String(row['報名序號'] || '').trim();
+        const name = String(row['姓名'] || '').trim();
+        if (!regNo || !name) { skip++; return; }
+        const id = 'c_' + regNo.replace(/\W/g, '_');
+        batch[id] = { id, regNo, name, idLast4: String(row['身分證末四碼'] || '').trim(), phoneLast3: String(row['手機末三碼'] || '').trim(), dept: String(row['畢業系別'] || '').trim(), school: String(row['就讀學校'] || '').trim(), createdAt: Date.now() };
+        ok++;
+      });
+      db.ref('candidates').update(batch).then(() => {
+        const m = document.getElementById('import-msg');
+        m.style.display = 'block';
+        m.innerHTML = `<span style="color:var(--g)">✅ 成功匯入 ${ok} 位考生${skip ? `，略過 ${skip} 筆空白` : ''}</span>`;
+      });
+    } catch (err) {
+      const m = document.getElementById('import-msg');
+      m.style.display = 'block';
+      m.innerHTML = '<span style="color:var(--r)">❌ 讀取失敗，請確認 Excel 格式</span>';
+    }
+  };
+  r.readAsArrayBuffer(file);
+}
+
+// Checkin QR
+function initCheckinQR() {
+  const url = location.origin + location.pathname.replace('index.html', '') + 'checkin.html';
+  document.getElementById('checkin-qr').innerHTML = '';
+  new QRCode(document.getElementById('checkin-qr'), { text: url, width: 180, height: 180, colorDark: '#000', colorLight: '#fff' });
+}
+function printCheckinQR() {
+  const url = location.origin + location.pathname.replace('index.html', '') + 'checkin.html';
+  const w = window.open('');
+  w.document.write(`<!DOCTYPE html><html><head><title>報到QR</title>
+  <style>body{font-family:sans-serif;text-align:center;padding:48px}h1{font-size:28px}p{color:#555;margin:12px 0 28px;font-size:16px}@media print{button{display:none}}</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head>
+  <body><h1>📋 考生報到</h1><p>請掃描 QR Code，輸入報名序號完成報到</p>
+  <div id="q" style="background:#fff;padding:16px;display:inline-block;border:2px solid #000;border-radius:8px"></div>
+  <br><br><button onclick="window.print()" style="padding:10px 28px;font-size:16px;cursor:pointer;margin-top:12px">🖨️ 列印</button>
+  <script>new QRCode(document.getElementById('q'),{text:'${url}',width:280,height:280})<\/script></body></html>`);
+}
+
+// Per-candidate QR
+function showQR(id) {
+  const c = candidates[id]; if (!c) return;
+  document.getElementById('qm-name').textContent = c.name;
+  document.getElementById('qm-info').textContent = '序號：' + c.regNo;
+  document.getElementById('qr-canvas').innerHTML = '';
+  const url = location.origin + location.pathname.replace('index.html', '') + 'scan.html?id=' + id;
+  new QRCode(document.getElementById('qr-canvas'), { text: url, width: 200, height: 200, colorDark: '#000', colorLight: '#fff' });
+  document.getElementById('qrModal').classList.add('show');
+}
+
+// Staff management
+function addStaff() {
+  const name = document.getElementById('st-name').value.trim();
+  const pw = document.getElementById('st-pw').value.trim();
+  const room = document.getElementById('st-room').value;
+  const msg = document.getElementById('staff-msg');
+  if (!name || !pw) { msg.style.display='block'; msg.innerHTML='<span style="color:var(--r)">請填寫姓名和密碼</span>'; return; }
+  // Check duplicate password
+  const existing = Object.values(staffList).find(s => s.password === pw);
+  if (existing) { msg.style.display='block'; msg.innerHTML='<span style="color:var(--r)">此密碼已被使用，請換一個</span>'; return; }
+  const id = 'st_' + Date.now();
+  db.ref('staff/' + id).set({ id, name, password: pw, room, createdAt: Date.now() }).then(() => {
+    document.getElementById('st-name').value = '';
+    document.getElementById('st-pw').value = '';
+    msg.style.display = 'block';
+    msg.innerHTML = '<span style="color:var(--g)">✅ 工作人員已新增</span>';
+    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+  });
+}
+
+function renderStaff() {
+  const el = document.getElementById('staff-list');
+  const list = Object.values(staffList).sort((a,b) => a.room.localeCompare(b.room));
+  if (!list.length) { el.innerHTML = '<p style="color:var(--m);font-size:13px;text-align:center;padding:24px">尚未新增工作人員</p>'; return; }
+  const roomCls = { CM216: 'rt-216', CM214: 'rt-214', CM212: 'rt-212' };
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">姓名</th>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">密碼</th>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">教室</th>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b)"></th>
+    </tr></thead>
+    <tbody>${list.map(s => `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><strong>${s.name}</strong></td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4);font-family:'JetBrains Mono',monospace;color:var(--y)">${s.password}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><span class="room-tag ${roomCls[s.room]||''}">${s.room}</span></td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><button class="btn br bsm" onclick="delStaff('${s.id}','${s.name}')">刪除</button></td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function delStaff(id, name) {
+  if (confirm('確定刪除工作人員「' + name + '」？')) db.ref('staff/' + id).remove();
+}
+
+// ── 老師管理 ──────────────────────────────────────────
+function addTeacher(type) {
+  const nameEl = type === 'interview' ? 'iv-name' : 'pr-name';
+  const pwEl   = type === 'interview' ? 'iv-pw'   : 'pr-pw';
+  const msgEl  = type === 'interview' ? 'iv-msg'  : 'pr-msg';
+  const name = document.getElementById(nameEl).value.trim();
+  const pw   = document.getElementById(pwEl).value.trim();
+  const room = type === 'interview' ? 'CM316' : document.getElementById('pr-room').value;
+  const msg  = document.getElementById(msgEl);
+  if (!name || !pw) { showMsg(msg, 'r', '請填寫姓名和密碼'); return; }
+  const allTeachers = Object.values(teacherList);
+  if (allTeachers.find(t => t.password === pw)) { showMsg(msg, 'r', '此密碼已被使用，請換一個'); return; }
+  const id = 'teacher_' + Date.now();
+  db.ref('teachers/' + id).set({ id, name, password: pw, room, type, createdAt: Date.now() }).then(() => {
+    document.getElementById(nameEl).value = '';
+    document.getElementById(pwEl).value = '';
+    showMsg(msg, 'g', '✅ 老師已新增，立即生效');
+    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+  });
+}
+
+function renderTeachers() {
+  renderTeacherList('interview', 'iv-teacher-list');
+  renderTeacherList('practical', 'pr-teacher-list');
+}
+
+function renderTeacherList(type, elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const list = Object.values(teacherList)
+    .filter(t => t.type === type)
+    .sort((a, b) => (a.room || '').localeCompare(b.room || '') || a.name.localeCompare(b.name));
+
+  if (!list.length) {
+    el.innerHTML = '<p style="color:var(--m);font-size:13px;text-align:center;padding:24px">尚無老師，請在左側新增</p>';
+    return;
+  }
+
+  const roomCls = { CM316: 'rt-216', CM216: 'rt-216', CM214: 'rt-214', CM212: 'rt-212' };
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">姓名</th>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">密碼</th>
+      <th style="color:var(--m);font-size:11px;text-align:left;padding:6px 10px;border-bottom:1px solid var(--b);text-transform:uppercase">教室</th>
+      <th style="color:var(--m);font-size:11px;padding:6px 10px;border-bottom:1px solid var(--b)"></th>
+    </tr></thead>
+    <tbody>${list.map(t => `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><strong>${t.name}</strong></td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4);font-family:'JetBrains Mono',monospace;color:var(--y)">${t.password}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)"><span class="room-tag ${roomCls[t.room] || ''}">${t.room}</span></td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(48,54,61,.4)">
+        <button class="btn br bsm" onclick="delTeacher('${t.id}','${t.name}')">刪除</button>
+      </td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function delTeacher(id, name) {
+  if (confirm('確定刪除老師「' + name + '」？')) db.ref('teachers/' + id).remove();
+}
+
+function showMsg(el, type, txt) {
+  el.style.display = 'block';
+  el.innerHTML = `<span style="color:var(--${type === 'g' ? 'g' : 'r'})">${txt}</span>`;
+}
+
+function clearQueue() {
+  if (confirm('確定清除所有術科候考佇列？（考生資料和評分不會刪除）'))
+    db.ref('practicalQueue').remove();
+}
+
+function exportCSV() {
+  const rows = [['序號', '姓名', '身分證末四碼', '手機末三碼', '畢業系別', '就讀學校', '報到', '面試平均', '術科平均', '指派教室']];
+  Object.values(candidates).sort((a, b) => String(a.regNo).localeCompare(String(b.regNo))).forEach(c => {
+    rows.push([c.regNo, c.name, c.idLast4, c.phoneLast3, c.dept, c.school, c.checkedIn ? '已報到' : '未報到', avg(c.interviewScores)?.toFixed(1) || '', avg(c.practicalScores)?.toFixed(1) || '', c.assignedRoom || '']);
+  });
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(rows.map(r => r.join(',')).join('\n'));
+  a.download = '考生名單.csv'; a.click();
+}
+function printAllQR() {
+  const base = location.origin + location.pathname.replace('index.html', '') + 'scan.html?id=';
+  const list = Object.values(candidates).sort((a, b) => String(a.regNo).localeCompare(String(b.regNo)));
+  const w = window.open('');
+  w.document.write(`<!DOCTYPE html><html><head><title>QR列印</title>
+  <style>body{font-family:sans-serif}.g{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px}.it{border:1px solid #ccc;border-radius:8px;padding:12px;text-align:center;page-break-inside:avoid}h3{margin:8px 0 2px;font-size:14px}.s{color:#666;font-size:11px}@media print{button{display:none}}</style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script></head>
+  <body><button onclick="window.print()" style="margin:12px;padding:8px 20px;cursor:pointer">🖨️ 列印</button>
+  <div class="g">${list.map(c => `<div class="it"><div id="q${c.id}"></div><h3>${c.name}</h3><div class="s">${c.regNo}｜${c.school || ''}</div></div>`).join('')}</div>
+  <script>${list.map(c => `new QRCode(document.getElementById('q${c.id}'),{text:'${base + c.id}',width:150,height:150})`).join(';')}<\/script></body></html>`);
+}// ── 掃碼分頁 ──────────────────────────────────────
+let scanRoom = '', scanName = '', tabScanner = null, tabHist = [];
+
+function scanLogin() {
+  const pw = document.getElementById('scan-pw').value.trim();
+  document.getElementById('scan-err').style.display = 'none';
+  db.ref('staff').orderByChild('password').equalTo(pw).once('value').then(snap => {
+    const data = snap.val();
+    if (!data) { document.getElementById('scan-err').style.display = 'block'; return; }
+    const staff = Object.values(data)[0];
+    scanRoom = staff.room; scanName = staff.name;
+    document.getElementById('scan-login-box').style.display = 'none';
+    document.getElementById('scan-app-box').style.display = 'block';
+    document.getElementById('scan-room-label').textContent = '📍 ' + scanRoom;
+    document.getElementById('scan-staff-label').textContent = scanName + ' 工作人員';
+  }).catch(() => { document.getElementById('scan-err').style.display = 'block'; });
+}
+
+function scanLogout() {
+  scanRoom = ''; scanName = ''; tabHist = [];
+  if (tabScanner) tabStopScan();
+  document.getElementById('scan-login-box').style.display = 'block';
+  document.getElementById('scan-app-box').style.display = 'none';
+  document.getElementById('scan-pw').value = '';
+  document.getElementById('tab-result').style.display = 'none';
+  document.getElementById('tab-hist').innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:8px">尚無記錄</p>';
+}
+
+function switchScanMode(m, el) {
+  document.querySelectorAll('#t-scan-tab .ftab').forEach(t => t.classList.toggle('on', t === el));
+  document.getElementById('scan-mode-camera').style.display = m === 'camera' ? 'block' : 'none';
+  document.getElementById('scan-mode-manual').style.display = m === 'manual' ? 'block' : 'none';
+  if (m !== 'camera' && tabScanner) tabStopScan();
+}
+
+function tabStartScan() {
+  document.getElementById('tab-start-btn').style.display = 'none';
+  document.getElementById('tab-stop-btn').style.display = 'block';
+  document.getElementById('tab-reader').innerHTML = '';
+  tabScanner = new Html5Qrcode('tab-reader');
+  tabScanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: { width: 220, height: 220 } }, url => {
+    const s = tabScanner; tabScanner = null;
+    s.stop().catch(() => {}).finally(() => {
+      document.getElementById('tab-start-btn').style.display = 'block';
+      document.getElementById('tab-stop-btn').style.display = 'none';
+      try { const id = new URL(url).searchParams.get('id'); if (id) tabProcessCandidate(id); else alert('QR碼無效'); }
+      catch (e) { alert('QR碼格式錯誤'); }
+    });
+  }, () => {});
+}
+
+function tabStopScan() {
+  document.getElementById('tab-start-btn').style.display = 'block';
+  document.getElementById('tab-stop-btn').style.display = 'none';
+  if (!tabScanner) return Promise.resolve();
+  const s = tabScanner; tabScanner = null;
+  return s.stop().catch(() => {});
+}
+
+function tabProcessManual() {
+  const id = document.getElementById('tab-manual-id').value.trim();
+  if (id) tabProcessCandidate(id);
+}
+
+function tabProcessCandidate(id) {
+  if (!scanRoom) { alert('請先登入'); return; }
+  db.ref('candidates/' + id).once('value').then(snap => {
+    const c = snap.val();
+    if (!c) { alert('找不到此考生'); return; }
+    const prevRoom = c.assignedRoom || null;
+    if (prevRoom && prevRoom !== scanRoom) {
+      if (!confirm(`⚠️ 此考生（${c.name}）已指派到 ${prevRoom}。\n確定改為 ${scanRoom} 嗎？`)) return;
+      db.ref('practicalQueue/' + prevRoom + '/' + id).remove();
+      db.ref('candidates/' + id + '/practicalScores').remove();
+    }
+    const isDup = prevRoom === scanRoom;
+    db.ref('candidates/' + id).update({ assignedRoom: scanRoom, assignedAt: Date.now() });
+    db.ref('practicalQueue/' + scanRoom + '/' + id).set({
+      candidateId: id, name: c.name, school: c.school || '',
+      dept: c.dept || '', regNo: c.regNo, assignedAt: Date.now(), scannedBy: scanName
+    });
+    const teachers = Object.values(TEACHERS).filter(t => t.room === scanRoom && t.type === 'practical');
+    const res = document.getElementById('tab-result');
+    document.getElementById('tab-r-status').textContent = isDup ? '⚠️ 重複掃碼' : '✅ 指派成功';
+    document.getElementById('tab-r-status').style.color = isDup ? 'var(--y)' : 'var(--g)';
+    document.getElementById('tab-r-name').textContent = c.name;
+    document.getElementById('tab-r-no').textContent = '序號：' + c.regNo;
+    document.getElementById('tab-r-room').textContent = scanRoom;
+    document.getElementById('tab-r-teachers').textContent = '👩‍🏫 ' + teachers.map(t => t.name).join('、');
+    document.getElementById('tab-r-info').textContent = (c.school ? '🏫 ' + c.school : '') + (c.dept ? '\n📚 ' + c.dept : '');
+    document.getElementById('tab-r-msg').textContent = isDup ? '已在此教室，老師畫面已更新' : '老師評分頁面已自動出現此考生';
+    res.style.display = 'block';
+    tabHist.unshift({ name: c.name, regNo: c.regNo, time: new Date().toLocaleTimeString(), isDup });
+    if (tabHist.length > 8) tabHist.pop();
+    tabRenderHist();
+    document.getElementById('tab-manual-id').value = '';
+  }).catch(() => alert('連線失敗'));
+}
+
+function tabResetResult() {
+  document.getElementById('tab-result').style.display = 'none';
+  const camMode = document.getElementById('scan-mode-camera');
+  if (camMode && camMode.style.display !== 'none') {
+    tabStopScan().then(() => setTimeout(() => tabStartScan(), 400));
+  }
+}
+
+function tabRenderHist() {
+  const el = document.getElementById('tab-hist');
+  if (!tabHist.length) { el.innerHTML = '<p style="color:var(--m);font-size:12px;text-align:center;padding:8px">尚無記錄</p>'; return; }
+  el.innerHTML = tabHist.map(h => `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:var(--s2);border-radius:8px;margin-top:5px;font-size:12px">
+    <span><strong>${h.name}</strong> <span style="color:var(--m)">${h.regNo}</span>${h.isDup ? '<span style="font-size:10px;background:rgba(227,179,65,.15);color:var(--y);border-radius:4px;padding:1px 5px;margin-left:4px">重複</span>' : ''}</span>
+    <span style="color:var(--ac2);font-weight:700;font-size:11px">${scanRoom} <span style="color:var(--m);font-weight:400">${h.time}</span></span>
+  </div>`).join('');
+}
+</script>
+</body>
+</html>
