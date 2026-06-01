@@ -106,11 +106,16 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
         <button class="stop-btn" id="stop-btn" style="display:none" onclick="stopScan()">■ 停止掃描</button>
       </div>
       <div id="mode-manual" style="display:none">
-        <p style="font-size:12px;color:var(--m);margin-bottom:8px">貼上 scan.html?id= 後的考生ID</p>
+        <p style="font-size:12px;color:var(--m);margin-bottom:6px">輸入考生序號末三碼</p>
+        <p style="font-size:11px;color:var(--r);margin-bottom:10px">⚠️ 精確比對：輸入 002 只會找到序號末三碼為 002 的考生</p>
         <div class="manual-row">
-          <input class="manual-inp" id="manual-id" placeholder="考生 ID">
-          <button class="manual-btn" onclick="processManual()">送出</button>
+          <input class="manual-inp" id="manual-regno" placeholder="例：002" maxlength="3"
+            oninput="this.value=this.value.replace(/[^0-9]/g,'')"
+            onkeydown="if(event.key==='Enter')processManualByRegNo()">
+          <button class="manual-btn" onclick="processManualByRegNo()">查詢</button>
         </div>
+        <div id="manual-matches" style="display:none;margin-top:10px"></div>
+        <div id="manual-err" style="display:none;color:var(--r);font-size:12px;margin-top:8px;padding:8px 10px;background:rgba(248,81,73,.08);border-radius:8px"></div>
       </div>
     </div>
 
@@ -201,9 +206,55 @@ function stopScan() {
   return s.stop().catch(() => {});
 }
 
-function processManual() {
-  const id = document.getElementById('manual-id').value.trim();
-  if (id) processCandidate(id);
+function processManualByRegNo() {
+  const q = document.getElementById('manual-regno').value.trim();
+  document.getElementById('manual-err').style.display = 'none';
+  document.getElementById('manual-matches').style.display = 'none';
+
+  if (!q || q.length === 0) return;
+
+  // 從 Firebase 取全部考生，精確比對末三碼
+  db.ref('candidates').once('value').then(snap => {
+    const all = snap.val() || {};
+    // 精確比對：序號字串的末 q.length 碼 === q，且序號長度 >= q.length
+    const matched = Object.values(all).filter(c => {
+      const reg = String(c.regNo || '');
+      return reg.length >= q.length && reg.slice(-q.length) === q;
+    });
+
+    if (matched.length === 0) {
+      const err = document.getElementById('manual-err');
+      err.textContent = `找不到序號末三碼為「${q}」的考生`;
+      err.style.display = 'block';
+      return;
+    }
+
+    if (matched.length === 1) {
+      // 唯一結果，直接指派
+      processCandidate(matched[0].id);
+      document.getElementById('manual-regno').value = '';
+      return;
+    }
+
+    // 多筆符合（理論上不應發生，但保險顯示選單）
+    const box = document.getElementById('manual-matches');
+    box.style.display = 'block';
+    box.innerHTML = `<p style="font-size:12px;color:var(--y);margin-bottom:8px">⚠️ 找到 ${matched.length} 筆，請選擇正確考生：</p>` +
+      matched.map(c => `
+        <div onclick="processCandidate('${c.id}');document.getElementById('manual-regno').value='';document.getElementById('manual-matches').style.display='none';"
+          style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s);border:1px solid var(--b);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:.12s"
+          onmouseover="this.style.borderColor='var(--ac)'" onmouseout="this.style.borderColor='var(--b)'">
+          <div>
+            <strong style="font-size:14px">${c.name}</strong>
+            <span style="color:var(--m);font-size:12px;margin-left:8px">序號 ${c.regNo}</span>
+          </div>
+          <span style="color:var(--ac);font-size:18px">›</span>
+        </div>`).join('');
+  }).catch(() => {
+    const err = document.getElementById('manual-err');
+    err.textContent = '查詢失敗，請確認網路連線';
+    err.style.display = 'block';
+  });
 }
 
 function processCandidate(id) {
