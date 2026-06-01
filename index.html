@@ -202,7 +202,6 @@ tr:hover td{background:rgba(88,166,255,.025)}
           <div class="ftab" onclick="setFilt('checkedin',this)">已報到</div>
           <div class="ftab" onclick="setFilt('not',this)">未報到</div>
           <div class="ftab" onclick="setFilt('done',this)">全完成</div>
-          <button class="btn bo bsm" onclick="exportCSV()">📤 CSV</button>
           <button class="btn bo bsm" onclick="printAllQR()">🖨️ QR</button>
         </div>
         <div class="tbl-wrap">
@@ -775,9 +774,10 @@ function clearQueue() {
 }
 
 function exportCSV() {
-  const rows = [['序號', '姓名', '身分證末四碼', '手機末三碼', '畢業系別', '就讀學校', '報到', '面試平均', '術科平均', '指派教室']];
+  const rows = [['序號', '姓名', '身分證末四碼', '手機末三碼', '畢業系別', '就讀學校', '報到', '面試平均', '術科平均', '術科老師1', '術科老師2', '指派教室']];
   Object.values(candidates).sort((a, b) => String(a.regNo).localeCompare(String(b.regNo))).forEach(c => {
-    rows.push([c.regNo, c.name, c.idLast4, c.phoneLast3, c.dept, c.school, c.checkedIn ? '已報到' : '未報到', avg(c.interviewScores)?.toFixed(1) || '', avg(c.practicalScores)?.toFixed(1) || '', c.assignedRoom || '']);
+    const prTeachers = Object.keys(c.practicalScores || {});
+    rows.push([c.regNo, c.name, c.idLast4, c.phoneLast3, c.dept, c.school, c.checkedIn ? '已報到' : '未報到', avg(c.interviewScores)?.toFixed(1) || '', avg(c.practicalScores)?.toFixed(1) || '', prTeachers[0] || '', prTeachers[1] || '', c.assignedRoom || '']);
   });
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(rows.map(r => r.join(',')).join('\n'));

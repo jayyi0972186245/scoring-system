@@ -209,10 +209,12 @@ function render() {
 }
 
 function exportCSV() {
-  const rows = [['序號', '姓名', '畢業系別', '就讀學校', '報到', '面試平均', '面試老師', '術科平均', '術科老師', '指派教室', '狀態']];
+  const rows = [['序號', '姓名', '畢業系別', '就讀學校', '報到', '面試平均', '面試老師1', '面試老師2', '術科平均', '術科老師1', '術科老師2', '指派教室', '狀態']];
   Object.values(candidates).sort((a, b) => String(a.regNo).localeCompare(String(b.regNo))).forEach(c => {
     const iv = avg(c.interviewScores), pr = avg(c.practicalScores);
-    rows.push([c.regNo, c.name, c.dept, c.school, c.checkedIn ? '已報到' : '未報到', iv?.toFixed(1) || '', Object.keys(c.interviewScores || {}).join('/'), pr?.toFixed(1) || '', Object.keys(c.practicalScores || {}).join('/'), c.assignedRoom || '', status(c) === 'done' ? '完整' : status(c) === 'partial' ? '部分' : '未評']);
+    const ivTeachers = Object.keys(c.interviewScores || {});
+    const prTeachers = Object.keys(c.practicalScores || {});
+    rows.push([c.regNo, c.name, c.dept, c.school, c.checkedIn ? '已報到' : '未報到', iv?.toFixed(1) || '', ivTeachers[0] || '', ivTeachers[1] || '', pr?.toFixed(1) || '', prTeachers[0] || '', prTeachers[1] || '', c.assignedRoom || '', status(c) === 'done' ? '完整' : status(c) === 'partial' ? '部分' : '未評']);
   });
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(rows.map(r => r.join(',')).join('\n'));
