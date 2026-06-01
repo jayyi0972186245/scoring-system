@@ -109,21 +109,16 @@ function login() {
   const pw = document.getElementById('pw').value.trim();
   document.getElementById('er').style.display = 'none';
 
-  // 查 Firebase teachers 節點（唯一來源）
+  // 唯一驗證來源：Firebase teachers 節點，不使用靜態 fallback
   db.ref('teachers').orderByChild('password').equalTo(pw).once('value').then(snap => {
     const data = snap.val();
     if (data) {
       const t = Object.values(data).find(t => t.type === 'interview');
       if (t) { doLoginWith(t); return; }
     }
-    // fallback：查靜態內建（兼容尚未寫入 Firebase 的情況）
-    const staticT = TEACHERS[pw];
-    if (staticT?.type === 'interview') { doLoginWith({ name: staticT.name, room: staticT.room, type: 'interview' }); return; }
     document.getElementById('er').style.display = 'block';
   }).catch(() => {
-    const staticT = TEACHERS[pw];
-    if (staticT?.type === 'interview') doLoginWith({ name: staticT.name, room: staticT.room, type: 'interview' });
-    else document.getElementById('er').style.display = 'block';
+    document.getElementById('er').style.display = 'block';
   });
 }
 

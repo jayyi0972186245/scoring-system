@@ -174,21 +174,16 @@ function doLogin() {
   const pw = document.getElementById('pw').value.trim();
   document.getElementById('err').style.display = 'none';
 
-  // 查 Firebase teachers 節點（唯一來源）
+  // 唯一驗證來源：Firebase teachers 節點，不使用靜態 fallback
   db.ref('teachers').orderByChild('password').equalTo(pw).once('value').then(snap => {
     const data = snap.val();
     if (data) {
       const t = Object.values(data).find(t => t.type === 'practical');
       if (t) { startSession(t); return; }
     }
-    // fallback：查靜態內建
-    const staticT = TEACHERS[pw];
-    if (staticT?.type === 'practical') { startSession({ name: staticT.name, room: staticT.room, type: 'practical' }); return; }
     document.getElementById('err').style.display = 'block';
   }).catch(() => {
-    const staticT = TEACHERS[pw];
-    if (staticT?.type === 'practical') startSession({ name: staticT.name, room: staticT.room, type: 'practical' });
-    else document.getElementById('err').style.display = 'block';
+    document.getElementById('err').style.display = 'block';
   });
 }
 
