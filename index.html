@@ -817,29 +817,29 @@ function exportCSV() {
       const ivAvg = avg(ivScores);
       const prAvg = avg(prScores);
 
-      // 面試：依 teacherList 順序填姓名與分數
+      // 面試：依 teacherList 順序填姓名與分數，未評分顯示 0
       const ivNames = (ivTeacherNames.length ? ivTeacherNames : ['', '']);
       const ivNameVals  = ivNames.map(n => n);
       const ivScoreVals = ivNames.map(n => {
         const s = ivScores[n];
-        return (s !== undefined && s !== null) ? s : '';
+        return (s !== undefined && s !== null) ? s : 0;
       });
 
-      // 術科：直接從該考生的 practicalScores 取出實際評他的兩位老師
+      // 術科：直接從該考生的 practicalScores 取出實際評他的兩位老師，未評分顯示 0
       const prEntries = Object.entries(prScores); // [[老師名, 分數], ...]
       const pr1Name  = prEntries[0] ? prEntries[0][0] : '';
       const pr2Name  = prEntries[1] ? prEntries[1][0] : '';
-      const pr1Score = prEntries[0] ? prEntries[0][1] : '';
-      const pr2Score = prEntries[1] ? prEntries[1][1] : '';
+      const pr1Score = prEntries[0] ? prEntries[0][1] : 0;
+      const pr2Score = prEntries[1] ? prEntries[1][1] : 0;
 
       rows.push([
         c.regNo, c.name, c.idLast4 || '', c.phoneLast3 || '',
         c.dept || '', c.school || '',
         c.checkedIn ? '已報到' : '未報到',
         ...ivNameVals, ...ivScoreVals,
-        ivAvg !== null ? ivAvg.toFixed(1) : '',
+        ivAvg !== null ? ivAvg.toFixed(1) : 0,
         pr1Name, pr2Name, pr1Score, pr2Score,
-        prAvg !== null ? prAvg.toFixed(1) : '',
+        prAvg !== null ? prAvg.toFixed(1) : 0,
         c.assignedRoom || ''
       ]);
     });
