@@ -387,7 +387,7 @@ tr:hover td{background:rgba(88,166,255,.025)}
         </div>
         <div class="card">
           <div class="ch2">⚠️ 危險操作</div>
-          <button class="btn br" style="width:100%;margin-bottom:8px" onclick="clearQueue()">清除術科佇列（不刪考生）</button>
+          <button class="btn br" style="width:100%;margin-bottom:8px" onclick="clearQueue()">清除所有候考佇列（不刪考生）</button>
           <button class="btn br" style="width:100%" onclick="clearAll()">清除所有考生資料</button>
         </div>
       </div>
@@ -587,14 +587,24 @@ function cancelCheckin(id, name) {
 function delC(id) {
   if (confirm('確定刪除此考生？')) {
     db.ref('candidates/' + id).remove();
-    // 同時從所有教室佇列移除此考生
+    // 同時從所有術科教室佇列移除此考生
     PRACTICAL_ROOMS.forEach(room => db.ref('practicalQueue/' + room + '/' + id).remove());
+    // 從面試佇列中移除含此考生的組別
+    db.ref('interviewQueue').once('value').then(snap => {
+      const groups = snap.val() || {};
+      Object.entries(groups).forEach(([gid, g]) => {
+        if ((g.candidates || []).some(c => c.id === id)) {
+          db.ref('interviewQueue/' + gid).remove();
+        }
+      });
+    });
   }
 }
 function clearAll() {
   if (confirm('確定清除所有考生？') && confirm('再次確認：清除全部資料？')) {
     db.ref('candidates').remove();
-    db.ref('practicalQueue').remove(); // 同時清除術科佇列
+    db.ref('practicalQueue').remove();
+    db.ref('interviewQueue').remove();
   }
 }
 
@@ -772,8 +782,10 @@ function showMsg(el, type, txt) {
 }
 
 function clearQueue() {
-  if (confirm('確定清除所有術科候考佇列？（考生資料和評分不會刪除）'))
+  if (confirm('確定清除所有候考佇列？（考生資料和評分不會刪除）')) {
     db.ref('practicalQueue').remove();
+    db.ref('interviewQueue').remove();
+  }
 }
 
 function exportCSV() {
