@@ -16,55 +16,50 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 .lw{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
 .lc{background:var(--s);border:1px solid var(--b);border-radius:20px;padding:36px 28px;width:100%;max-width:380px;text-align:center}
 .lc .ico{font-size:48px;margin-bottom:12px}
-.lc h1{font-size:20px;font-weight:700;color:var(--ac);margin-bottom:6px}
+.lc h1{font-size:20px;font-weight:700;color:var(--ac2);margin-bottom:6px}
 .lc p{color:var(--m);font-size:13px;margin-bottom:22px;line-height:1.6}
 .pw-inp{width:100%;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:11px 14px;color:var(--t);font-size:15px;font-family:inherit;outline:none;text-align:center;letter-spacing:.15em}
-.pw-inp:focus{border-color:var(--ac)}
-.btn-login{width:100%;background:var(--ac);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px;transition:.12s}
+.pw-inp:focus{border-color:var(--ac2)}
+.btn-login{width:100%;background:var(--ac2);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:10px;transition:.12s}
 .btn-login:hover{filter:brightness(1.1)}
 .err{color:var(--r);font-size:12px;margin-top:8px;display:none}
 .wrap{max-width:520px;margin:0 auto;padding:16px}
 .toprow{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.room-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(88,166,255,.12);border:1px solid rgba(88,166,255,.3);color:var(--ac);border-radius:20px;padding:6px 16px;font-size:14px;font-weight:700}
+.room-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(188,140,255,.12);border:1px solid rgba(188,140,255,.3);color:var(--ac2);border-radius:20px;padding:6px 16px;font-size:14px;font-weight:700}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--g);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .card{background:var(--s);border:1px solid var(--b);border-radius:14px;padding:18px;margin-bottom:12px}
 .ch2{font-size:11px;color:var(--m);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;font-weight:600}
 .mtabs{display:flex;gap:6px;margin-bottom:14px}
 .mtab{flex:1;padding:9px;border-radius:8px;background:var(--s2);border:1px solid var(--b);color:var(--m);cursor:pointer;text-align:center;font-size:12px;font-weight:500;transition:.12s}
-.mtab.on{background:var(--ac);color:#000;border-color:var(--ac)}
+.mtab.on{background:var(--ac2);color:#fff;border-color:var(--ac2)}
 #reader{border-radius:10px;overflow:hidden}
-.scan-btn{width:100%;margin-top:10px;cursor:pointer;font-family:inherit;font-weight:700;border:none;border-radius:10px;padding:12px;font-size:14px;background:var(--ac);color:#000;transition:.12s}
+.scan-btn{width:100%;margin-top:10px;cursor:pointer;font-family:inherit;font-weight:700;border:none;border-radius:10px;padding:12px;font-size:14px;background:var(--ac2);color:#fff;transition:.12s}
 .scan-btn:hover{filter:brightness(1.1)}
 .stop-btn{width:100%;margin-top:6px;cursor:pointer;font-family:inherit;font-weight:500;border:1px solid var(--b);border-radius:10px;padding:9px;font-size:13px;background:transparent;color:var(--m)}
 .manual-row{display:flex;gap:8px;margin-top:10px}
 .manual-inp{flex:1;background:var(--s2);border:1px solid var(--b);border-radius:8px;padding:9px 12px;color:var(--t);font-size:13px;font-family:inherit;outline:none}
-.manual-inp:focus{border-color:var(--ac)}
-.manual-btn{background:var(--ac);color:#000;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
-
+.manual-inp:focus{border-color:var(--ac2)}
+.manual-btn{background:var(--ac2);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
 /* 暫存區 */
 .staged-empty{color:var(--m);font-size:12px;text-align:center;padding:14px 0}
 .staged-item{display:flex;align-items:center;justify-content:space-between;background:var(--s2);border:1px solid var(--b);border-radius:10px;padding:10px 14px;margin-bottom:8px}
-.staged-item.dupe{border-color:var(--y)}
 .staged-left{display:flex;align-items:center;gap:10px}
-.staged-num{background:var(--ac);color:#000;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace}
+.staged-num{background:var(--ac2);color:#fff;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;min-width:24px;text-align:center}
 .staged-name{font-size:15px;font-weight:700}
 .staged-sub{font-size:11px;color:var(--m);margin-top:1px}
-.staged-warn{font-size:10px;color:var(--y);margin-top:2px}
 .staged-remove{background:transparent;border:1px solid var(--b);color:var(--m);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;transition:.12s}
 .staged-remove:hover{border-color:var(--r);color:var(--r)}
 .send-btn{width:100%;background:var(--g);color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;transition:.12s;margin-top:4px}
 .send-btn:hover{filter:brightness(1.1)}
-.send-btn:disabled{opacity:.4;cursor:not-allowed}
+.send-btn:disabled{opacity:.35;cursor:not-allowed;filter:none}
 .send-ok{background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.3);border-radius:10px;padding:12px;text-align:center;color:var(--g);font-size:14px;font-weight:600;display:none;margin-bottom:8px}
-
-/* 掃碼結果浮動提示 */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--b);border-radius:12px;padding:12px 20px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+/* Toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--b);border-radius:12px;padding:12px 22px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
 .toast.show{opacity:1}
 .toast.ok{border-color:var(--g);color:var(--g)}
 .toast.warn{border-color:var(--y);color:var(--y)}
 .toast.err{border-color:var(--r);color:var(--r)}
-
 /* History */
 .hi{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--s2);border-radius:8px;margin-top:6px;font-size:12px}
 </style>
@@ -76,9 +71,9 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
   <div class="lc">
     <div class="ico">🎤</div>
     <h1>面試工作人員掃碼</h1>
-    <p>CM316 面試考場門口專用<br>請輸入您的工作人員密碼</p>
+    <p>CM316 面試考場門口專用<br>請輸入您的面試工作人員密碼</p>
     <input class="pw-inp" type="password" id="pw" placeholder="輸入工作人員密碼" onkeydown="if(event.key==='Enter')doLogin()">
-    <div class="err" id="err-login">密碼錯誤，請向管理員確認</div>
+    <div class="err" id="err-login">密碼錯誤或無面試工作人員權限</div>
     <button class="btn-login" onclick="doLogin()">登入</button>
     <a href="index.html" style="display:block;margin-top:14px;font-size:12px;color:var(--m);text-decoration:none">← 返回管理後台</a>
   </div>
@@ -88,7 +83,6 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 <div id="APP" style="display:none">
   <div id="NAV"></div>
   <div class="wrap">
-
     <div class="toprow">
       <div>
         <div class="room-badge"><span class="dot"></span>🎤 CM316 面試考場</div>
@@ -123,13 +117,13 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
       </div>
     </div>
 
-    <!-- 暫存區：本組考生 -->
+    <!-- 本組暫存區 -->
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div class="ch2" style="margin-bottom:0">🗂️ 本組考生（<span id="staged-count">0</span> 人）</div>
-        <button onclick="clearStaged()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer" id="clear-btn">清空</button>
+        <button onclick="clearStaged()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">清空</button>
       </div>
-      <p style="font-size:12px;color:var(--m);margin-bottom:12px;line-height:1.5">掃描或查詢考生後會加入此區，確認後一起推送至面試老師的評分頁面</p>
+      <p style="font-size:12px;color:var(--m);margin-bottom:12px;line-height:1.5">掃描或輸入考生後會加入此區，確認人選後再按推送</p>
       <div id="staged-list"><div class="staged-empty">尚未加入任何考生</div></div>
       <div class="send-ok" id="send-ok">✅ 已成功推送至面試老師評分頁面！</div>
       <button class="send-btn" id="send-btn" onclick="sendGroup()" disabled>🎤 推送這組考生至面試評分</button>
@@ -140,7 +134,6 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
       <div class="ch2">📋 本次推送記錄</div>
       <div id="hist"><p style="color:var(--m);font-size:12px;text-align:center;padding:12px">尚無記錄</p></div>
     </div>
-
   </div>
 </div>
 
@@ -152,29 +145,25 @@ firebase.initializeApp(FIREBASE_CONFIG);
 const db = firebase.database();
 
 let myName = '', scanner = null;
-let candidatesCache = {};      // 全部考生快取
-let staged = [];               // 暫存本組考生 [{id, name, regNo, school, dept}]
-let hist = [];                 // 推送記錄
+let candidatesCache = {};
+let staged = [];
+let hist = [];
 
-// ── 登入 ──────────────────────────────────────────────
+// ── 登入：只允許 room === 'CM316' 的工作人員 ──────────
 function doLogin() {
   const pw = document.getElementById('pw').value.trim();
   document.getElementById('err-login').style.display = 'none';
 
-  // 先嘗試 Firebase staff 節點（掃碼工作人員）
   db.ref('staff').orderByChild('password').equalTo(pw).once('value').then(snap => {
     const data = snap.val();
     if (data) {
       const staff = Object.values(data)[0];
-      myName = staff.name;
-      afterLogin();
-      return;
-    }
-    // 也允許管理員登入
-    if (TEACHERS[pw]?.type === 'admin') {
-      myName = TEACHERS[pw].name;
-      afterLogin();
-      return;
+      // 必須是 CM316 面試工作人員才能登入
+      if (staff.room === 'CM316') {
+        myName = staff.name;
+        afterLogin();
+        return;
+      }
     }
     document.getElementById('err-login').style.display = 'block';
   }).catch(() => { document.getElementById('err-login').style.display = 'block'; });
@@ -183,8 +172,9 @@ function doLogin() {
 function afterLogin() {
   document.getElementById('LP').style.display = 'none';
   document.getElementById('APP').style.display = 'block';
-  document.getElementById('NAV').innerHTML = buildNav('scan', myName + ' 工作人員', 'doLogout()');
-  document.getElementById('staff-label').textContent = myName + ' 工作人員';
+  document.getElementById('NAV').innerHTML = buildNav('interview-scan', myName + ' 工作人員', 'doLogout()');
+  document.getElementById('staff-label').textContent = myName + ' 工作人員（CM316）';
+  // 訂閱考生快取
   db.ref('candidates').on('value', snap => { candidatesCache = snap.val() || {}; });
 }
 
@@ -198,7 +188,7 @@ function doLogout() {
   renderStaged(); renderHist();
 }
 
-// ── 掃描模式切換 ──────────────────────────────────────
+// ── 掃描 ──────────────────────────────────────────────
 function switchMode(m, el) {
   document.querySelectorAll('.mtab').forEach(t => t.classList.toggle('on', t === el));
   document.getElementById('mode-camera').style.display = m === 'camera' ? 'block' : 'none';
@@ -256,38 +246,41 @@ function processManualByRegNo() {
     document.getElementById('manual-regno').value = '';
     return;
   }
-  // 多筆 → 顯示選單
   const box = document.getElementById('manual-matches');
   box.style.display = 'block';
   box.innerHTML = `<p style="font-size:12px;color:var(--y);margin-bottom:8px">⚠️ 找到 ${matched.length} 筆，請選擇：</p>` +
     matched.map(c => `
       <div onclick="addToStaged('${c.id}');document.getElementById('manual-regno').value='';document.getElementById('manual-matches').style.display='none';"
         style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--s);border:1px solid var(--b);border-radius:8px;margin-bottom:6px;cursor:pointer"
-        onmouseover="this.style.borderColor='var(--ac)'" onmouseout="this.style.borderColor='var(--b)'">
+        onmouseover="this.style.borderColor='var(--ac2)'" onmouseout="this.style.borderColor='var(--b)'">
         <div><strong style="font-size:14px">${c.name}</strong>
           <span style="color:var(--m);font-size:12px;margin-left:8px">序號 ${c.regNo}</span></div>
-        <span style="color:var(--ac);font-size:18px">›</span>
+        <span style="color:var(--ac2);font-size:18px">›</span>
       </div>`).join('');
 }
 
-// ── 加入暫存區 ────────────────────────────────────────
+// ── 加入暫存 ──────────────────────────────────────────
 function addToStaged(id) {
   const c = candidatesCache[id];
   if (!c) { showToast('找不到此考生', 'err'); return; }
+  if (staged.find(s => s.id === id)) { showToast(`${c.name} 已在本組`, 'warn'); return; }
 
-  const alreadyIn = staged.find(s => s.id === id);
-  if (alreadyIn) { showToast(`${c.name} 已在本組`, 'warn'); return; }
-
-  staged.push({ id: c.id, name: c.name, regNo: c.regNo, school: c.school || '', dept: c.dept || '' });
+  staged.push({
+    id: c.id,
+    name: c.name,
+    regNo: String(c.regNo || ''),
+    school: c.school || '',
+    dept: c.dept || ''
+  });
   showToast(`✅ 已加入：${c.name}`, 'ok');
   renderStaged();
 
-  // 掃描後繼續掃下一位
-  const isCamera = document.getElementById('mode-camera').style.display !== 'none';
-  if (isCamera) setTimeout(() => startScan(), 600);
+  // 掃完繼續掃
+  if (document.getElementById('mode-camera').style.display !== 'none') {
+    setTimeout(() => startScan(), 600);
+  }
 }
 
-// ── 從暫存區移除 ──────────────────────────────────────
 function removeFromStaged(id) {
   staged = staged.filter(s => s.id !== id);
   renderStaged();
@@ -311,7 +304,6 @@ function renderStaged() {
     el.innerHTML = '<div class="staged-empty">尚未加入任何考生</div>';
     return;
   }
-
   el.innerHTML = staged.map((s, i) => `
     <div class="staged-item">
       <div class="staged-left">
@@ -325,7 +317,9 @@ function renderStaged() {
     </div>`).join('');
 }
 
-// ── 推送一組至 Firebase interviewQueue ────────────────
+// ── 推送至 Firebase interviewQueue ────────────────────
+// 資料結構與 interview.html 的 startListening() 完全對應：
+// interviewQueue/<groupId> = { groupId, createdAt, createdBy, candidates: [{id,name,regNo,school,dept}] }
 function sendGroup() {
   if (!staged.length) return;
 
@@ -335,29 +329,40 @@ function sendGroup() {
     createdAt: Date.now(),
     createdBy: myName,
     candidates: staged.map(s => ({
-      id: s.id, name: s.name, regNo: s.regNo, school: s.school, dept: s.dept
+      id: s.id,
+      name: s.name,
+      regNo: s.regNo,
+      school: s.school,
+      dept: s.dept
     }))
   };
 
-  db.ref('interviewQueue/' + groupId).set(groupData).then(() => {
-    // 記錄推送歷史
-    hist.unshift({
-      groupId,
-      names: staged.map(s => s.name),
-      time: new Date().toLocaleTimeString()
-    });
-    if (hist.length > 10) hist.pop();
-    renderHist();
+  // 寫入 Firebase
+  db.ref('interviewQueue/' + groupId).set(groupData)
+    .then(() => {
+      // 記錄歷史
+      hist.unshift({
+        names: staged.map(s => s.name).join('、'),
+        count: staged.length,
+        time: new Date().toLocaleTimeString()
+      });
+      if (hist.length > 10) hist.pop();
+      renderHist();
 
-    // 顯示成功訊息，清空暫存
-    document.getElementById('send-ok').style.display = 'block';
-    staged = [];
-    renderStaged();
-    document.getElementById('send-ok').style.display = 'block';
-  });
+      // 清空暫存，顯示成功
+      staged = [];
+      renderStaged();
+      const ok = document.getElementById('send-ok');
+      ok.style.display = 'block';
+      setTimeout(() => { ok.style.display = 'none'; }, 4000);
+      showToast('✅ 推送成功！', 'ok');
+    })
+    .catch(err => {
+      showToast('推送失敗：' + err.message, 'err');
+    });
 }
 
-// ── 渲染推送記錄 ──────────────────────────────────────
+// ── 推送記錄 ──────────────────────────────────────────
 function renderHist() {
   const el = document.getElementById('hist');
   if (!hist.length) {
@@ -366,19 +371,19 @@ function renderHist() {
   }
   el.innerHTML = hist.map(h => `
     <div class="hi">
-      <span><strong>${h.names.join('、')}</strong></span>
-      <span style="color:var(--ac);font-size:11px">${h.time}</span>
+      <span><strong>${h.names}</strong> <span style="color:var(--m)">(${h.count}人)</span></span>
+      <span style="color:var(--ac2);font-size:11px">${h.time}</span>
     </div>`).join('');
 }
 
-// ── Toast 提示 ────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────
 let toastTimer = null;
 function showToast(msg, type = 'ok') {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.className = 'toast show ' + type;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.className = 'toast'; }, 2000);
+  toastTimer = setTimeout(() => { el.className = 'toast'; }, 2200);
 }
 </script>
 </body>
