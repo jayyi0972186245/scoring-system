@@ -176,6 +176,7 @@ function afterLogin() {
   document.getElementById('staff-label').textContent = myName + ' 工作人員（CM316）';
   // 訂閱考生快取
   db.ref('candidates').on('value', snap => { candidatesCache = snap.val() || {}; });
+
 }
 
 function doLogout() {
@@ -298,8 +299,6 @@ function renderStaged() {
   const el = document.getElementById('staged-list');
   document.getElementById('staged-count').textContent = staged.length;
   document.getElementById('send-btn').disabled = staged.length === 0;
-  document.getElementById('send-ok').style.display = 'none';
-
   if (!staged.length) {
     el.innerHTML = '<div class="staged-empty">尚未加入任何考生</div>';
     return;
@@ -318,14 +317,16 @@ function renderStaged() {
 }
 
 // ── 推送至 Firebase interviewQueue ────────────────────
-// 資料結構與 interview.html 的 startListening() 完全對應：
-// interviewQueue/<groupId> = { groupId, createdAt, createdBy, candidates: [{id,name,regNo,school,dept}] }
 function sendGroup() {
   if (!staged.length) return;
 
+  const btn = document.getElementById('send-btn');
+  btn.disabled = true;
+  btn.textContent = '推送中...';
+
   const groupId = 'group_' + Date.now();
   const groupData = {
-    groupId,
+    groupId: groupId,
     createdAt: Date.now(),
     createdBy: myName,
     candidates: staged.map(s => ({
@@ -337,10 +338,9 @@ function sendGroup() {
     }))
   };
 
-  // 寫入 Firebase
   db.ref('interviewQueue/' + groupId).set(groupData)
     .then(() => {
-      // 記錄歷史
+      // 記錄推送歷史
       hist.unshift({
         names: staged.map(s => s.name).join('、'),
         count: staged.length,
@@ -349,16 +349,30 @@ function sendGroup() {
       if (hist.length > 10) hist.pop();
       renderHist();
 
-      // 清空暫存，顯示成功
+      // 清空暫存
+      const sentCount = staged.length;
       staged = [];
-      renderStaged();
+
+      // 重新渲染（不影響 send-ok）
+      document.getElementById('staged-count').textContent = '0';
+      document.getElementById('staged-list').innerHTML = '<div class="staged-empty">尚未加入任何考生</div>';
+
+      // 顯示成功訊息
       const ok = document.getElementById('send-ok');
       ok.style.display = 'block';
-      setTimeout(() => { ok.style.display = 'none'; }, 4000);
+      setTimeout(() => { ok.style.display = 'none'; }, 5000);
+
+      btn.textContent = '🎤 推送這組考生至面試評分';
+      btn.disabled = true;  // 暫存已清空，禁用按鈕
       showToast('✅ 推送成功！', 'ok');
     })
     .catch(err => {
-      showToast('推送失敗：' + err.message, 'err');
+      btn.disabled = false;
+      btn.textContent = '🎤 推送這組考生至面試評分';
+      // 顯示詳細錯誤
+      const msg = err ? (err.message || err.code || JSON.stringify(err)) : '未知錯誤';
+      alert('❌ 推送失敗，原因：' + msg);
+      showToast('推送失敗', 'err');
     });
 }
 

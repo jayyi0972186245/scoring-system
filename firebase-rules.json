@@ -1,0 +1,24 @@
+{
+  "rules": {
+    "candidates": {
+      ".read": true,
+      ".write": true
+    },
+    "staff": {
+      ".read": true,
+      ".write": true
+    },
+    "teachers": {
+      ".read": true,
+      ".write": true
+    },
+    "practicalQueue": {
+      ".read": true,
+      ".write": true
+    },
+    "interviewQueue": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
