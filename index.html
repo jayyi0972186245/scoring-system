@@ -377,7 +377,15 @@ function login() {
       if (!s.val() || Object.keys(s.val()).length === 0) seedBuiltinTeachers();
     });
     document.getElementById('er').style.display = 'none';
-  } else { document.getElementById('er').style.display = 'block'; }
+  }).catch(() => {
+    // Firebase 失敗時 fallback 靜態驗證
+    if (TEACHERS[pw]?.type === 'admin') {
+      document.getElementById('LP').style.display = 'none';
+      document.getElementById('APP').style.display = 'block';
+    } else {
+      document.getElementById('er').style.display = 'block';
+    }
+  });
 }
 
 function seedBuiltinTeachers() {
