@@ -542,14 +542,24 @@ function cancelCheckin(id, name) {
 function delC(id) {
   if (confirm('確定刪除此考生？')) {
     db.ref('candidates/' + id).remove();
-    // 同時從所有教室佇列移除此考生
+    // 從所有術科教室佇列移除此考生
     PRACTICAL_ROOMS.forEach(room => db.ref('practicalQueue/' + room + '/' + id).remove());
+    // 從面試佇列中移除含此考生的組別
+    db.ref('interviewQueue').once('value').then(snap => {
+      const groups = snap.val() || {};
+      Object.entries(groups).forEach(([gid, g]) => {
+        if ((g.candidates || []).some(c => c.id === id)) {
+          db.ref('interviewQueue/' + gid).remove();
+        }
+      });
+    });
   }
 }
 function clearAll() {
   if (confirm('確定清除所有考生？') && confirm('再次確認：清除全部資料？')) {
     db.ref('candidates').remove();
-    db.ref('practicalQueue').remove(); // 同時清除術科佇列
+    db.ref('practicalQueue').remove();
+    db.ref('interviewQueue').remove();
   }
 }
 
