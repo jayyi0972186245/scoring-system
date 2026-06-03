@@ -259,10 +259,10 @@ function render() {
 }
 
 function exportCSV() {
-  // 標頭：面試老師1、面試老師2、面試平均、術科老師1、術科老師2、術科平均
+  // 欄位格式與管理後台一致：老師名稱和分數分開欄位
   const rows = [['序號', '姓名', '畢業系別', '就讀學校', '報到',
-    '面試老師1', '面試老師2', '面試平均',
-    '術科老師1', '術科老師2', '術科平均',
+    '面試委員1', '面試委員2', '評分(面試委員1)', '評分(面試委員2)', '面試平均成績',
+    '術科評分委員1', '術科評分委員2', '術科成績1', '術科成績2', '術科平均成績',
     '指派教室', '狀態']];
 
   Object.values(candidates)
@@ -273,21 +273,24 @@ function exportCSV() {
       const ivAvg = avg(c.interviewScores);
       const prAvg = avg(c.practicalScores);
 
-      // 格式：90(黃祥熙)
-      const fmt = ([name, score]) => score !== undefined && score !== null ? `${score}(${name})` : '';
-
       rows.push([
         c.regNo,
         c.name,
         c.dept || '',
         c.school || '',
         c.checkedIn ? '已報到' : '未報到',
-        ivEntries[0] ? fmt(ivEntries[0]) : '',
-        ivEntries[1] ? fmt(ivEntries[1]) : '',
-        ivAvg !== null ? ivAvg.toFixed(1) : '',
-        prEntries[0] ? fmt(prEntries[0]) : '',
-        prEntries[1] ? fmt(prEntries[1]) : '',
-        prAvg !== null ? prAvg.toFixed(1) : '',
+        // 面試：委員名稱欄 + 分數欄
+        ivEntries[0] ? ivEntries[0][0] : '',
+        ivEntries[1] ? ivEntries[1][0] : '',
+        ivEntries[0] ? (ivEntries[0][1] !== null && ivEntries[0][1] !== undefined ? ivEntries[0][1] : 0) : 0,
+        ivEntries[1] ? (ivEntries[1][1] !== null && ivEntries[1][1] !== undefined ? ivEntries[1][1] : 0) : 0,
+        ivAvg !== null ? ivAvg.toFixed(1) : 0,
+        // 術科：委員名稱欄 + 分數欄
+        prEntries[0] ? prEntries[0][0] : '',
+        prEntries[1] ? prEntries[1][0] : '',
+        prEntries[0] ? (prEntries[0][1] !== null && prEntries[0][1] !== undefined ? prEntries[0][1] : 0) : 0,
+        prEntries[1] ? (prEntries[1][1] !== null && prEntries[1][1] !== undefined ? prEntries[1][1] : 0) : 0,
+        prAvg !== null ? prAvg.toFixed(1) : 0,
         c.assignedRoom || '',
         status(c) === 'done' ? '完整' : status(c) === 'partial' ? '部分' : '未評'
       ]);

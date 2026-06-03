@@ -399,9 +399,15 @@ function seedBuiltinTeachers() {
   db.ref('teachers').update(batch);
 }
 function logout() {
+  // 取消所有 Firebase 監聽器，避免登出後繼續佔用連線
+  db.ref('candidates').off();
+  db.ref('staff').off();
+  db.ref('teachers').off();
   document.getElementById('APP').style.display = 'none';
   document.getElementById('LP').style.display = 'flex';
   document.getElementById('pw').value = '';
+  // 清空記憶體中的資料
+  candidates = {}; staffList = {}; teacherList = {};
 }
 
 function avg(o) {
@@ -536,24 +542,14 @@ function cancelCheckin(id, name) {
 function delC(id) {
   if (confirm('確定刪除此考生？')) {
     db.ref('candidates/' + id).remove();
-    // 從所有術科教室佇列移除此考生
+    // 同時從所有教室佇列移除此考生
     PRACTICAL_ROOMS.forEach(room => db.ref('practicalQueue/' + room + '/' + id).remove());
-    // 從面試佇列中移除含此考生的組別
-    db.ref('interviewQueue').once('value').then(snap => {
-      const groups = snap.val() || {};
-      Object.entries(groups).forEach(([gid, g]) => {
-        if ((g.candidates || []).some(c => c.id === id)) {
-          db.ref('interviewQueue/' + gid).remove();
-        }
-      });
-    });
   }
 }
 function clearAll() {
   if (confirm('確定清除所有考生？') && confirm('再次確認：清除全部資料？')) {
     db.ref('candidates').remove();
-    db.ref('practicalQueue').remove();
-    db.ref('interviewQueue').remove();
+    db.ref('practicalQueue').remove(); // 同時清除術科佇列
   }
 }
 
@@ -741,6 +737,7 @@ function clearQueue() {
     const data = snap.val() || {};
     const updates = {};
     Object.entries(data).forEach(([id, c]) => {
+      // 有指派教室 且 尚無術科評分 → 清除指派資訊
       const hasScore = c.practicalScores && Object.keys(c.practicalScores).length > 0;
       if (c.assignedRoom && !hasScore) {
         updates[id + '/assignedRoom'] = null;
