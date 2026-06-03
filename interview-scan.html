@@ -88,7 +88,10 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
         <div class="room-badge"><span class="dot"></span>🎤 CM316 面試考場</div>
         <div style="font-size:12px;color:var(--m);margin-top:6px" id="staff-label">—</div>
       </div>
-      <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit">登出</button>
+      <div style="display:flex;gap:6px">
+        <button onclick="refreshCache()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit" id="refresh-btn">🔄 重整</button>
+        <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit">登出</button>
+      </div>
     </div>
 
     <!-- 掃描區 -->
@@ -174,8 +177,17 @@ function afterLogin() {
   document.getElementById('APP').style.display = 'block';
   document.getElementById('NAV').innerHTML = buildNav('interview-scan', myName + ' 工作人員', 'doLogout()');
   document.getElementById('staff-label').textContent = myName + ' 工作人員（CM316）';
-  // 訂閱考生快取
-  db.ref('candidates').on('value', snap => { candidatesCache = snap.val() || {}; });
+  // 登入後一次性載入全量考生資料進快取
+  db.ref('candidates').once('value').then(snap => {
+    candidatesCache = snap.val() || {};
+  });
+  // 之後只監聽單筆異動，不推整個節點
+  db.ref('candidates').on('child_changed', snap => {
+    if (snap.key) candidatesCache[snap.key] = snap.val();
+  });
+  db.ref('candidates').on('child_removed', snap => {
+    if (snap.key) delete candidatesCache[snap.key];
+  });
 
 }
 
@@ -184,9 +196,21 @@ function doLogout() {
   document.getElementById('LP').style.display = 'flex';
   document.getElementById('pw').value = '';
   myName = ''; staged = []; hist = [];
-  db.ref('candidates').off();
+  db.ref('candidates').off('child_changed');
+  db.ref('candidates').off('child_removed');
   if (scanner) stopScan();
   renderStaged(); renderHist();
+}
+
+function refreshCache() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) { btn.textContent = '⏳ 更新中...'; btn.disabled = true; }
+  db.ref('candidates').once('value').then(snap => {
+    candidatesCache = snap.val() || {};
+    if (btn) { btn.textContent = '✅ 已更新'; btn.disabled = false; setTimeout(() => { btn.textContent = '🔄 重整'; }, 1500); }
+  }).catch(() => {
+    if (btn) { btn.textContent = '❌ 失敗'; btn.disabled = false; setTimeout(() => { btn.textContent = '🔄 重整'; }, 1500); }
+  });
 }
 
 // ── 掃描 ──────────────────────────────────────────────

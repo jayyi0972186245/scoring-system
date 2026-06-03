@@ -220,17 +220,44 @@ function startListening() {
       if (!queueData[gid]) newGroupIds.add(gid);
     });
     queueData = data;
-    refreshUI();
+
+    // 對佇列中所有 group 的考生，按需載入尚未快取的 candidates 資料
+    const allCids = [];
+    Object.values(data).forEach(g => (g.candidates || []).forEach(c => allCids.push(c.id)));
+    const missingCids = [...new Set(allCids)].filter(cid => !candidateData[cid]);
+
+    if (missingCids.length > 0) {
+      Promise.all(
+        missingCids.map(cid =>
+          db.ref('candidates/' + cid).once('value').then(s => ({ cid, val: s.val() }))
+        )
+      ).then(results => {
+        results.forEach(({ cid, val }) => { if (val) candidateData[cid] = val; });
+        refreshUI();
+      });
+    } else {
+      refreshUI();
+    }
   });
-  unsubCandidates = db.ref('candidates').on('value', snap => {
-    candidateData = snap.val() || {};
-    refreshUI();
+
+  // 只監聽佇列中考生的分數異動，不監聽整個 candidates 節點
+  unsubCandidates = db.ref('candidates').on('child_changed', snap => {
+    const cid = snap.key;
+    // 只處理目前在任一 group 裡的考生
+    const inQueue = Object.values(queueData).some(g =>
+      (g.candidates || []).some(c => c.id === cid)
+    );
+    if (inQueue) {
+      candidateData[cid] = snap.val();
+      refreshUI();
+    }
   });
 }
 
 function stopListening() {
   if (unsubQueue) { db.ref('interviewQueue').off('value', unsubQueue); unsubQueue = null; }
-  if (unsubCandidates) { db.ref('candidates').off('value', unsubCandidates); unsubCandidates = null; }
+  if (unsubCandidates) { db.ref('candidates').off('child_changed', unsubCandidates); unsubCandidates = null; }
+  candidateData = {};
 }
 
 // ── Helper：取我對某考生的面試分數 ───────────────────

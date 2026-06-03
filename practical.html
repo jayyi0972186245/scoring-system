@@ -215,22 +215,35 @@ function startListening() {
   const qRef = db.ref('practicalQueue/' + teacher.room);
   unsubQueue = qRef.on('value', snap => {
     const data = snap.val() || {};
-    Object.keys(data).forEach(cid => {
-      if (!queueData[cid]) newCids.add(cid);
-    });
+    const newIds = Object.keys(data).filter(cid => !queueData[cid]);
+    newIds.forEach(cid => newCids.add(cid));
     queueData = data;
 
-    // 如果 candidateData 已載入，立刻清除孤兒
-    if (Object.keys(candidateData).length > 0) cleanOrphanQueue();
-
-    refreshUI();
+    // 對佇列中尚未載入的考生，按需讀取其 candidates 資料
+    const missingIds = Object.keys(data).filter(cid => !candidateData[cid]);
+    if (missingIds.length > 0) {
+      Promise.all(
+        missingIds.map(cid =>
+          db.ref('candidates/' + cid).once('value').then(s => ({ cid, val: s.val() }))
+        )
+      ).then(results => {
+        results.forEach(({ cid, val }) => { if (val) candidateData[cid] = val; });
+        cleanOrphanQueue();
+        refreshUI();
+      });
+    } else {
+      if (Object.keys(candidateData).length > 0) cleanOrphanQueue();
+      refreshUI();
+    }
   });
 
-  const cRef = db.ref('candidates');
-  unsubCandidates = cRef.on('value', snap => {
-    candidateData = snap.val() || {};
-    cleanOrphanQueue();
-    refreshUI();
+  // candidates 只監聽已在佇列中的考生的分數異動
+  // 使用 child_changed 取代全量 value 監聽
+  unsubCandidates = db.ref('candidates').on('child_changed', snap => {
+    if (snap.key && queueData[snap.key]) {
+      candidateData[snap.key] = snap.val();
+      refreshUI();
+    }
   });
 }
 
@@ -248,7 +261,8 @@ function cleanOrphanQueue() {
 
 function stopListening() {
   if (unsubQueue) { db.ref('practicalQueue/' + (teacher?.room || '')).off('value', unsubQueue); unsubQueue = null; }
-  if (unsubCandidates) { db.ref('candidates').off('value', unsubCandidates); unsubCandidates = null; }
+  if (unsubCandidates) { db.ref('candidates').off('child_changed', unsubCandidates); unsubCandidates = null; }
+  candidateData = {};
 }
 
 // ── Core: get my score for a candidate ───────────────

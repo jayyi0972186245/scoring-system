@@ -91,7 +91,10 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
         <div class="room-badge"><span class="dot"></span><span id="room-label">—</span></div>
         <div style="font-size:12px;color:var(--m);margin-top:6px" id="staff-label">—</div>
       </div>
-      <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit">登出</button>
+      <div style="display:flex;gap:6px">
+        <button onclick="refreshCache()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit" id="refresh-btn">🔄 重整</button>
+        <button onclick="doLogout()" style="background:transparent;border:1px solid var(--b);color:var(--m);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:11px;font-family:inherit">登出</button>
+      </div>
     </div>
 
     <div class="card">
@@ -154,12 +157,6 @@ function doLogin() {
     const data = snap.val();
     if (!data) { document.getElementById('err-login').style.display = 'block'; return; }
     const staff = Object.values(data)[0];
-    // CM316 是面試工作人員，不能登入術科掃碼頁
-    if (staff.room === 'CM316') {
-      document.getElementById('err-login').style.display = 'block';
-      document.getElementById('err-login').textContent = '此帳號為面試工作人員，請使用 interview-scan.html';
-      return;
-    }
     myRoom = staff.room;
     myName = staff.name;
     document.getElementById('LP').style.display = 'none';
@@ -167,8 +164,18 @@ function doLogin() {
     document.getElementById('NAV').innerHTML = buildNav('scan', myName, 'doLogout()');
     document.getElementById('room-label').textContent = myRoom;
     document.getElementById('staff-label').textContent = myName + ' 工作人員';
-    // 登入後訂閱考生資料，存入記憶體，手動查詢直接查快取不需額外請求
-    db.ref('candidates').on('value', snap => { candidatesCache = snap.val() || {}; });
+    // 登入後一次性載入全量考生資料進快取
+    db.ref('candidates').once('value').then(snap => {
+      candidatesCache = snap.val() || {};
+    });
+    // 之後只監聽單筆異動（child_changed/added/removed），不推整個節點
+    db.ref('candidates').on('child_changed', snap => {
+      if (snap.key) candidatesCache[snap.key] = snap.val();
+    });
+
+    db.ref('candidates').on('child_removed', snap => {
+      if (snap.key) delete candidatesCache[snap.key];
+    });
   }).catch(() => { document.getElementById('err-login').style.display = 'block'; });
 }
 
@@ -177,7 +184,8 @@ function doLogout() {
   document.getElementById('LP').style.display = 'flex';
   document.getElementById('pw').value = '';
   myRoom = ''; myName = ''; hist = []; candidatesCache = {};
-  db.ref('candidates').off();
+  db.ref('candidates').off('child_changed');
+  db.ref('candidates').off('child_removed');
   if (scanner) stopScan();
 }
 
@@ -205,6 +213,17 @@ function startScan() {
       } catch (e) { alert('QR碼格式錯誤'); }
     });
   }, () => {});
+}
+
+function refreshCache() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) { btn.textContent = '⏳ 更新中...'; btn.disabled = true; }
+  db.ref('candidates').once('value').then(snap => {
+    candidatesCache = snap.val() || {};
+    if (btn) { btn.textContent = '✅ 已更新'; btn.disabled = false; setTimeout(() => { btn.textContent = '🔄 重整'; }, 1500); }
+  }).catch(() => {
+    if (btn) { btn.textContent = '❌ 失敗'; btn.disabled = false; setTimeout(() => { btn.textContent = '🔄 重整'; }, 1500); }
+  });
 }
 
 function stopScan() {
