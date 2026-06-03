@@ -784,11 +784,11 @@ function exportCSV() {
   const header = [
     '序號', '姓名', '身分證末四碼', '手機末三碼', '畢業系別', '就讀學校', '報到',
     // 面試：名稱欄 + 分數欄 + 平均
-    ...(ivTeacherNames.length ? ivTeacherNames : ['老師1', '老師2']).map((_, i) => `面試老師${i + 1}`),
-    ...(ivTeacherNames.length ? ivTeacherNames : ['老師1', '老師2']).map((_, i) => `面試評分${i + 1}`),
-    '面試平均',
-    // 術科：固定4欄（委員1、委員2、評分1、評分2）+ 平均
-    '術科委員1', '術科委員2', '評分(術科委員1)', '評分(術科委員2)', '術科平均',
+    ...(ivTeacherNames.length ? ivTeacherNames : ['老師1', '老師2']).map((_, i) => `面試委員${i + 1}`),
+    ...(ivTeacherNames.length ? ivTeacherNames : ['老師1', '老師2']).map((_, i) => `評分(面試委員${i + 1})`),
+    '面試平均成績',
+    // 術科：固定4欄 + 平均
+    '術科評分委員1', '術科評分委員2', '術科成績1', '術科成績2', '術科平均成績',
     '指派教室'
   ];
 
