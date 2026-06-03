@@ -64,7 +64,8 @@ function buildNav(currentPage, userName, logoutFn) {
   const base = location.origin + p.substring(0, p.lastIndexOf('/') + 1);
   const pages = [
     { id: 'index',         label: '🏠 管理後台', href: base + 'index.html' },
-    { id: 'scan',          label: '📱 掃碼指派',  href: base + 'scan.html' },
+    { id: 'scan',          label: '📱 術科掃碼',  href: base + 'scan.html' },
+    { id: 'interview-scan', label: '🎤 面試掃碼',  href: base + 'interview-scan.html' },
     { id: 'interview',     label: '🎤 面試評分',  href: base + 'interview.html' },
     { id: 'practical',     label: '✏️ 術科評分',  href: base + 'practical.html' },
     { id: 'results',       label: '📊 成績總表',  href: base + 'results.html' },
