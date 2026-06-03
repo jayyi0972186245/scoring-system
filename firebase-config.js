@@ -19,7 +19,7 @@ const TEACHERS = {
   "7987": { name: "黃育信", room: "CM214", type: "practical", label: "術科老師" },
   "7673": { name: "何正斌", room: "CM212", type: "practical", label: "術科老師" },
   "7661": { name: "徐彬偉", room: "CM212", type: "practical", label: "術科老師" },
-  "admin2024": { name: "管理員", room: "ADMIN", type: "admin", label: "管理員" }
+  // 管理員密碼已移至 Firebase teachers 節點，請在管理後台新增 type=admin 的帳號
 };
 
 const PRACTICAL_ROOMS = ["CM216", "CM214", "CM212"];

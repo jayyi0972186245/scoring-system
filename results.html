@@ -138,12 +138,27 @@ let currentUser = null;
 function doLogin() {
   const pw = document.getElementById('pw').value.trim();
   document.getElementById('err-login').style.display = 'none';
-  if (TEACHERS[pw]?.type === 'admin') {
-    currentUser = TEACHERS[pw];
-    startApp();
-  } else {
-    document.getElementById('err-login').style.display = 'block';
-  }
+
+  // 從 Firebase teachers 節點驗證管理員密碼，同時保留靜態 fallback
+  db.ref('teachers').orderByChild('password').equalTo(pw).once('value').then(snap => {
+    const data = snap.val();
+    const isAdmin = (data && Object.values(data).some(t => t.type === 'admin'))
+                    || TEACHERS[pw]?.type === 'admin';
+    if (isAdmin) {
+      currentUser = { name: '管理員' };
+      startApp();
+    } else {
+      document.getElementById('err-login').style.display = 'block';
+    }
+  }).catch(() => {
+    // Firebase 失敗時 fallback 靜態驗證
+    if (TEACHERS[pw]?.type === 'admin') {
+      currentUser = TEACHERS[pw];
+      startApp();
+    } else {
+      document.getElementById('err-login').style.display = 'block';
+    }
+  });
 }
 
 function startApp() {

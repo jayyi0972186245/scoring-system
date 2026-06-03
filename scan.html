@@ -262,7 +262,9 @@ function processCandidate(id) {
 
   // 已在其他教室 → 確認後才改
   if (prevRoom && prevRoom !== myRoom) {
-    if (!confirm(`⚠️ 此考生（${c.name}）已指派到 ${prevRoom}。\n確定改為 ${myRoom} 嗎？`)) return;
+    const hasPracticalScore = c.practicalScores && Object.keys(c.practicalScores).length > 0;
+    const scoreWarning = hasPracticalScore ? '\n\n⚠️ 警告：此考生在 ' + prevRoom + ' 已有評分記錄，改派後該評分將永久刪除！' : '';
+    if (!confirm(`⚠️ 此考生（${c.name}）已指派到 ${prevRoom}。\n確定改派到 ${myRoom} 嗎？${scoreWarning}`)) return;
     db.ref('practicalQueue/' + prevRoom + '/' + id).remove();
     db.ref('candidates/' + id + '/practicalScores').remove();
   }

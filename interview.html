@@ -429,8 +429,35 @@ function submitScore(candidateId) {
   const inp = document.getElementById('sinp-' + candidateId);
   const v = parseInt(inp?.value);
   if (isNaN(v) || v < 0 || v > 100) { alert('請輸入 0 到 100 的整數'); return; }
-  db.ref('candidates/' + candidateId + '/interviewScores/' + teacher.name).set(v);
-  // Firebase listener 自動觸發 refreshUI
+  db.ref('candidates/' + candidateId + '/interviewScores/' + teacher.name).set(v)
+    .then(() => {
+      // 評分寫入後，檢查目前這組是否所有老師都已評完所有考生
+      // 若是，自動從 interviewQueue 移除該組（清理佇列）
+      if (!selGroupId) return;
+      const group = queueData[selGroupId];
+      if (!group?.candidates?.length) return;
+
+      // 取得面試老師總數
+      db.ref('teachers').once('value').then(tSnap => {
+        const allTeachers = Object.values(tSnap.val() || {})
+          .filter(t => t.type === 'interview');
+        const teacherCount = allTeachers.length || 1;
+
+        // 取得最新的考生分數
+        const cids = group.candidates.map(c => c.id);
+        Promise.all(cids.map(cid =>
+          db.ref('candidates/' + cid + '/interviewScores').once('value')
+            .then(s => s.val() || {})
+        )).then(allScores => {
+          const allDone = allScores.every(scores =>
+            Object.keys(scores).length >= teacherCount
+          );
+          if (allDone) {
+            db.ref('interviewQueue/' + selGroupId).remove();
+          }
+        });
+      });
+    });
 }
 
 function editScore(candidateId) {

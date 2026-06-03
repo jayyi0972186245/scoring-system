@@ -264,22 +264,35 @@ function processManualByRegNo() {
 function addToStaged(id) {
   const c = candidatesCache[id];
   if (!c) { showToast('找不到此考生', 'err'); return; }
+
+  // 防重複：已在本組暫存區
   if (staged.find(s => s.id === id)) { showToast(`${c.name} 已在本組`, 'warn'); return; }
 
-  staged.push({
-    id: c.id,
-    name: c.name,
-    regNo: String(c.regNo || ''),
-    school: c.school || '',
-    dept: c.dept || ''
-  });
-  showToast(`✅ 已加入：${c.name}`, 'ok');
-  renderStaged();
+  // 防重複：已存在於 interviewQueue 任何尚未完成的 group
+  db.ref('interviewQueue').orderByChild('createdAt').once('value').then(snap => {
+    const groups = snap.val() || {};
+    const alreadyQueued = Object.values(groups).some(g =>
+      (g.candidates || []).some(cand => cand.id === id)
+    );
+    if (alreadyQueued) {
+      if (!confirm(`⚠️ ${c.name} 已在面試佇列中（可能已被推送給老師）。
+確定仍要加入本組？`)) return;
+    }
+    staged.push({
+      id: c.id,
+      name: c.name,
+      regNo: String(c.regNo || ''),
+      school: c.school || '',
+      dept: c.dept || ''
+    });
+    showToast(`✅ 已加入：${c.name}`, 'ok');
+    renderStaged();
 
-  // 掃完繼續掃
-  if (document.getElementById('mode-camera').style.display !== 'none') {
-    setTimeout(() => startScan(), 600);
-  }
+    // 掃完繼續掃
+    if (document.getElementById('mode-camera').style.display !== 'none') {
+      setTimeout(() => startScan(), 600);
+    }
+  });
 }
 
 function removeFromStaged(id) {

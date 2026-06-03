@@ -353,7 +353,15 @@ function showTab(id, el) {
 
 function login() {
   const pw = document.getElementById('pw').value.trim();
-  if (TEACHERS[pw]?.type === 'admin') {
+  document.getElementById('er').style.display = 'none';
+
+  // 優先從 Firebase teachers 節點驗證管理員密碼
+  db.ref('teachers').orderByChild('password').equalTo(pw).once('value').then(snap => {
+    const data = snap.val();
+    const isAdmin = (data && Object.values(data).some(t => t.type === 'admin'))
+                    || TEACHERS[pw]?.type === 'admin';
+    if (!isAdmin) { document.getElementById('er').style.display = 'block'; return; }
+
     document.getElementById('LP').style.display = 'none';
     document.getElementById('APP').style.display = 'block';
     document.getElementById('NAV').innerHTML = buildNav('index', '管理員', 'logout()');
