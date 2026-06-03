@@ -705,8 +705,28 @@ function showMsg(el, type, txt) {
 }
 
 function clearQueue() {
-  if (confirm('確定清除所有術科候考佇列？（考生資料和評分不會刪除）'))
-    db.ref('practicalQueue').remove();
+  if (!confirm('確定清除術科佇列？\n\n尚未評分的考生將從老師畫面移除，且指派教室記錄會一併清除。\n已完成評分的考生不受影響。')) return;
+
+  // 1. 清除 practicalQueue
+  db.ref('practicalQueue').remove();
+
+  // 2. 清除尚未評分考生的指派欄位（有 practicalScores 的保留）
+  db.ref('candidates').once('value').then(snap => {
+    const data = snap.val() || {};
+    const updates = {};
+    Object.entries(data).forEach(([id, c]) => {
+      // 有指派教室 且 尚無術科評分 → 清除指派資訊
+      const hasScore = c.practicalScores && Object.keys(c.practicalScores).length > 0;
+      if (c.assignedRoom && !hasScore) {
+        updates[id + '/assignedRoom'] = null;
+        updates[id + '/assignedAt']   = null;
+        updates[id + '/scannedBy']    = null;
+      }
+    });
+    if (Object.keys(updates).length > 0) {
+      db.ref('candidates').update(updates);
+    }
+  });
 }
 
 function clearInterviewQueue() {
