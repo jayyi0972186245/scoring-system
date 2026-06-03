@@ -320,6 +320,7 @@ tr:hover td{background:rgba(88,166,255,.025)}
         <div class="card">
           <div class="ch2">⚠️ 危險操作</div>
           <button class="btn br" style="width:100%;margin-bottom:8px" onclick="clearQueue()">清除術科佇列（不刪考生）</button>
+          <button class="btn br" style="width:100%;margin-bottom:8px" onclick="clearInterviewQueue()">清除面試佇列（不刪考生）</button>
           <button class="btn br" style="width:100%" onclick="clearAll()">清除所有考生資料</button>
         </div>
       </div>
@@ -706,6 +707,11 @@ function showMsg(el, type, txt) {
 function clearQueue() {
   if (confirm('確定清除所有術科候考佇列？（考生資料和評分不會刪除）'))
     db.ref('practicalQueue').remove();
+}
+
+function clearInterviewQueue() {
+  if (confirm('確定清除面試佇列？（考生資料和評分不會刪除）'))
+    db.ref('interviewQueue').remove();
 }
 
 function exportCSV() {
