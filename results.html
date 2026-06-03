@@ -14,7 +14,7 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 </style>
 <style id="nav-css"></style>
 <style>
-.wrap{max-width:1100px;margin:0 auto;padding:20px 16px}
+.wrap{max-width:1300px;margin:0 auto;padding:20px 16px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
 .st{background:var(--s);border:1px solid var(--b);border-radius:12px;padding:16px;text-align:center}
 .st .n{font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--ac)}
@@ -26,12 +26,14 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 .ftab.on{background:var(--ac);color:#000;border-color:var(--ac)}
 .btn{cursor:pointer;font-family:inherit;font-weight:500;background:var(--s);border:1px solid var(--b);color:var(--t);border-radius:8px;padding:7px 14px;font-size:12px;transition:.12s}
 .btn:hover{border-color:var(--ac);color:var(--ac)}
-.tbl-wrap{background:var(--s);border:1px solid var(--b);border-radius:14px;overflow:hidden}
+.tbl-wrap{background:var(--s);border:1px solid var(--b);border-radius:14px;overflow:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead{background:var(--s2)}
 th{padding:10px 14px;text-align:left;font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.07em;font-weight:500;border-bottom:1px solid var(--b);cursor:pointer;white-space:nowrap;user-select:none}
 th:hover{color:var(--ac)}
-td{padding:11px 14px;border-bottom:1px solid rgba(30,45,79,.5);vertical-align:middle}
+th.no-sort{cursor:default}
+th.no-sort:hover{color:var(--m)}
+td{padding:10px 14px;border-bottom:1px solid rgba(30,45,79,.5);vertical-align:middle;white-space:nowrap}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:rgba(96,165,250,.04)}
 .mono{font-family:'JetBrains Mono',monospace;font-size:12px}
@@ -40,12 +42,21 @@ tr:hover td{background:rgba(96,165,250,.04)}
 .bdy{background:rgba(250,204,21,.08);color:var(--y)}
 .bdm{background:var(--s2);color:var(--m)}
 .bdb{background:rgba(96,165,250,.1);color:var(--ac)}
-.score{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px}
+.score{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px}
+.score-avg{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px}
 .sg{color:var(--g)}.sy{color:var(--y)}.sr{color:var(--r)}.sm{color:var(--m)}
-.bar-wrap{display:flex;align-items:center;gap:6px}
-.bar{height:5px;border-radius:3px;background:var(--b);width:60px;overflow:hidden;flex-shrink:0}
+/* 個別分數 cell */
+.score-detail{display:flex;flex-direction:column;gap:2px}
+.score-item{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--t)}
+.score-item .tname{font-size:10px;color:var(--m);font-family:'Noto Sans TC',sans-serif}
+.score-pending{font-size:11px;color:var(--m)}
+/* 平均欄 */
+.avg-cell{text-align:center}
+.bar-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.bar{height:4px;border-radius:3px;background:var(--b);width:52px;overflow:hidden}
 .bar-fill{height:100%;border-radius:3px}
-.teacher-line{font-size:10px;color:var(--m);margin-top:2px}
+/* 分隔線 */
+th.sep,td.sep{border-left:1px solid var(--b)}
 .no-data{text-align:center;padding:56px;color:var(--m)}
 @media(max-width:700px){.stats{grid-template-columns:repeat(2,1fr)}.toolbar{flex-direction:column}}
 .lw{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
@@ -101,11 +112,16 @@ tr:hover td{background:rgba(96,165,250,.04)}
       <thead><tr>
         <th onclick="setSort('regNo')">序號 ↕</th>
         <th onclick="setSort('name')">考生 ↕</th>
-        <th onclick="setSort('iv')">面試成績 ↕</th>
-        <th onclick="setSort('pr')">術科成績 ↕</th>
-        <th>教室</th><th>狀態</th>
+        <th class="sep no-sort">面試老師1</th>
+        <th class="no-sort">面試老師2</th>
+        <th onclick="setSort('iv')">面試平均 ↕</th>
+        <th class="sep no-sort">術科老師1</th>
+        <th class="no-sort">術科老師2</th>
+        <th onclick="setSort('pr')">術科平均 ↕</th>
+        <th class="sep no-sort">教室</th>
+        <th class="no-sort">狀態</th>
       </tr></thead>
-      <tbody id="tbody"><tr><td colspan="6" class="no-data">載入中...</td></tr></tbody>
+      <tbody id="tbody"><tr><td colspan="10" class="no-data">載入中...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -145,10 +161,39 @@ function doLogout() {
   candidates = {}; currentUser = null;
 }
 
-function avg(o) { if (!o) return null; const v = Object.values(o).filter(x => x !== null && x !== undefined && x !== ''); return v.length ? v.reduce((a, b) => a + Number(b), 0) / v.length : null; }
-function status(c) { const iv = avg(c.interviewScores) !== null, pr = avg(c.practicalScores) !== null; return iv && pr ? 'done' : iv || pr ? 'partial' : 'none'; }
+function avg(o) {
+  if (!o) return null;
+  const v = Object.values(o).filter(x => x !== null && x !== undefined && x !== '');
+  return v.length ? v.reduce((a, b) => a + Number(b), 0) / v.length : null;
+}
+function status(c) {
+  const iv = avg(c.interviewScores) !== null, pr = avg(c.practicalScores) !== null;
+  return iv && pr ? 'done' : iv || pr ? 'partial' : 'none';
+}
 function scoreCol(v) { if (v === null) return 'sm'; return v >= 80 ? 'sg' : v >= 60 ? 'sy' : 'sr'; }
 function barColor(v) { if (v === null) return '#1e2d4f'; return v >= 80 ? '#4ade80' : v >= 60 ? '#facc15' : '#f87171'; }
+
+// 產生「分數(老師名)」格式的 cell
+function scoreDetailCell(scoresObj, index) {
+  if (!scoresObj) return '<span class="score-pending">—</span>';
+  const entries = Object.entries(scoresObj);
+  if (entries.length <= index) return '<span class="score-pending">—</span>';
+  const [tname, score] = entries[index];
+  const v = Number(score);
+  return `<span class="score ${scoreCol(v)}">${v}</span><span class="tname" style="font-size:10px;color:var(--m);font-family:'Noto Sans TC',sans-serif;margin-left:3px">(${tname})</span>`;
+}
+
+// 平均欄 cell
+function avgCell(scoresObj) {
+  const v = avg(scoresObj);
+  if (v === null) return '<span class="badge bdm">未評</span>';
+  const entries = Object.entries(scoresObj || {});
+  const pending = entries.length < 2 ? ' <span style="color:var(--y);font-size:10px">(待補)</span>' : '';
+  return `<div class="bar-wrap">
+    <div class="bar"><div class="bar-fill" style="width:${v}%;background:${barColor(v)}"></div></div>
+    <span class="score-avg ${scoreCol(v)}">${v.toFixed(1)}</span>
+  </div>${pending}`;
+}
 
 function updateStats() {
   const list = Object.values(candidates);
@@ -178,47 +223,65 @@ function render() {
   });
 
   const tbody = document.getElementById('tbody');
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="no-data">沒有符合的考生</td></tr>'; return; }
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="10" class="no-data">沒有符合的考生</td></tr>'; return; }
 
+  const st = c => status(c);
   tbody.innerHTML = list.map(c => {
-    const iv = avg(c.interviewScores), pr = avg(c.practicalScores);
-    const st = status(c);
-    const ivTeachers = Object.keys(c.interviewScores || {});
-    const prTeachers = Object.keys(c.practicalScores || {});
-    const ivDone = ivTeachers.length >= 2;
-    const prDone = prTeachers.length >= 2;
+    const s = st(c);
     return `<tr>
       <td class="mono">${c.regNo || ''}</td>
       <td><strong>${c.name || ''}</strong></td>
-      <td>
-        ${iv !== null
-          ? `<div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:${iv}%;background:${barColor(iv)}"></div></div><span class="score ${scoreCol(iv)}">${iv.toFixed(1)}</span></div>
-             <div class="teacher-line">${ivTeachers.join('、')}${ivDone ? '' : ' <span style="color:var(--y)">(待補)</span>'}</div>`
-          : `<span class="badge bdm">未評</span>`}
-      </td>
-      <td>
-        ${pr !== null
-          ? `<div class="bar-wrap"><div class="bar"><div class="bar-fill" style="width:${pr}%;background:${barColor(pr)}"></div></div><span class="score ${scoreCol(pr)}">${pr.toFixed(1)}</span></div>
-             <div class="teacher-line">${prTeachers.join('、')}${prDone ? '' : ' <span style="color:var(--y)">(待補)</span>'}${c.assignedRoom ? ' ・ ' + c.assignedRoom : ''}</div>`
-          : `<span class="badge bdm">未評</span>`}
-      </td>
-      <td>${c.assignedRoom ? `<span class="badge bdy">${c.assignedRoom}</span>` : '<span style="color:var(--m);font-size:11px">—</span>'}</td>
-      <td>${st === 'done' ? '<span class="badge bdg">完整</span>' : st === 'partial' ? '<span class="badge bdy">部分</span>' : '<span class="badge bdm">未評</span>'}</td>
+      <td class="sep">${scoreDetailCell(c.interviewScores, 0)}</td>
+      <td>${scoreDetailCell(c.interviewScores, 1)}</td>
+      <td class="avg-cell">${avgCell(c.interviewScores)}</td>
+      <td class="sep">${scoreDetailCell(c.practicalScores, 0)}</td>
+      <td>${scoreDetailCell(c.practicalScores, 1)}</td>
+      <td class="avg-cell">${avgCell(c.practicalScores)}</td>
+      <td class="sep">${c.assignedRoom ? `<span class="badge bdy">${c.assignedRoom}</span>` : '<span style="color:var(--m);font-size:11px">—</span>'}</td>
+      <td>${s === 'done' ? '<span class="badge bdg">完整</span>' : s === 'partial' ? '<span class="badge bdy">部分</span>' : '<span class="badge bdm">未評</span>'}</td>
     </tr>`;
   }).join('');
 }
 
 function exportCSV() {
-  const rows = [['序號', '姓名', '畢業系別', '就讀學校', '報到', '面試平均', '面試老師1', '面試老師2', '術科平均', '術科老師1', '術科老師2', '指派教室', '狀態']];
-  Object.values(candidates).sort((a, b) => String(a.regNo).localeCompare(String(b.regNo))).forEach(c => {
-    const iv = avg(c.interviewScores), pr = avg(c.practicalScores);
-    const ivTeachers = Object.keys(c.interviewScores || {});
-    const prTeachers = Object.keys(c.practicalScores || {});
-    rows.push([c.regNo, c.name, c.dept, c.school, c.checkedIn ? '已報到' : '未報到', iv?.toFixed(1) || '', ivTeachers[0] || '', ivTeachers[1] || '', pr?.toFixed(1) || '', prTeachers[0] || '', prTeachers[1] || '', c.assignedRoom || '', status(c) === 'done' ? '完整' : status(c) === 'partial' ? '部分' : '未評']);
-  });
+  // 標頭：面試老師1、面試老師2、面試平均、術科老師1、術科老師2、術科平均
+  const rows = [['序號', '姓名', '畢業系別', '就讀學校', '報到',
+    '面試老師1', '面試老師2', '面試平均',
+    '術科老師1', '術科老師2', '術科平均',
+    '指派教室', '狀態']];
+
+  Object.values(candidates)
+    .sort((a, b) => String(a.regNo).localeCompare(String(b.regNo)))
+    .forEach(c => {
+      const ivEntries = Object.entries(c.interviewScores || {});
+      const prEntries = Object.entries(c.practicalScores || {});
+      const ivAvg = avg(c.interviewScores);
+      const prAvg = avg(c.practicalScores);
+
+      // 格式：90(黃祥熙)
+      const fmt = ([name, score]) => score !== undefined && score !== null ? `${score}(${name})` : '';
+
+      rows.push([
+        c.regNo,
+        c.name,
+        c.dept || '',
+        c.school || '',
+        c.checkedIn ? '已報到' : '未報到',
+        ivEntries[0] ? fmt(ivEntries[0]) : '',
+        ivEntries[1] ? fmt(ivEntries[1]) : '',
+        ivAvg !== null ? ivAvg.toFixed(1) : '',
+        prEntries[0] ? fmt(prEntries[0]) : '',
+        prEntries[1] ? fmt(prEntries[1]) : '',
+        prAvg !== null ? prAvg.toFixed(1) : '',
+        c.assignedRoom || '',
+        status(c) === 'done' ? '完整' : status(c) === 'partial' ? '部分' : '未評'
+      ]);
+    });
+
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(rows.map(r => r.join(',')).join('\n'));
-  a.download = '成績總表.csv'; a.click();
+  a.download = '成績總表.csv';
+  a.click();
 }
 </script>
 </body>
