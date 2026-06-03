@@ -67,6 +67,12 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 .hi{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:var(--s2);border-radius:8px;margin-top:6px;font-size:12px}
 .hi-room{font-weight:700;color:var(--ac2);font-size:11px}
 .hi-dup{font-size:10px;background:rgba(227,179,65,.15);color:var(--y);border-radius:4px;padding:1px 5px;margin-left:4px}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--b);border-radius:12px;padding:12px 22px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1}
+.toast.ok{border-color:var(--g);color:var(--g)}
+.toast.warn{border-color:var(--y);color:var(--y)}
+.toast.err{border-color:var(--r);color:var(--r)}
 </style>
 </head>
 <body>
@@ -304,23 +310,23 @@ function processCandidate(id) {
   const isDup = (prevRoom === myRoom);
 
   // 寫入 Firebase（只寫不讀，不加 catch alert）
-  db.ref('candidates/' + id).update({ assignedRoom: myRoom, assignedAt: Date.now() });
-  db.ref('practicalQueue/' + myRoom + '/' + id).set({
-    candidateId: id,
-    name: c.name,
-    school: c.school || '',
-    dept: c.dept || '',
-    regNo: c.regNo,
-    assignedAt: Date.now(),
-    scannedBy: myName
+  Promise.all([
+    db.ref('candidates/' + id).update({ assignedRoom: myRoom, assignedAt: Date.now() }),
+    db.ref('practicalQueue/' + myRoom + '/' + id).set({
+      candidateId: id, name: c.name, school: c.school || '',
+      dept: c.dept || '', regNo: c.regNo,
+      assignedAt: Date.now(), scannedBy: myName
+    })
+  ]).then(() => {
+    showResult(c, isDup, prevRoom);
+    hist.unshift({ name: c.name, regNo: c.regNo, time: new Date().toLocaleTimeString(), isDup });
+    if (hist.length > 10) hist.pop();
+    renderHist();
+    document.getElementById('manual-regno').value = '';
+    history.replaceState(null, '', location.pathname);
+  }).catch(() => {
+    showToast('❌ 指派失敗，請確認網路後重新掃描', 'err');
   });
-
-  showResult(c, isDup, prevRoom);
-  hist.unshift({ name: c.name, regNo: c.regNo, time: new Date().toLocaleTimeString(), isDup });
-  if (hist.length > 10) hist.pop();
-  renderHist();
-  document.getElementById('manual-regno').value = '';
-  history.replaceState(null, '', location.pathname);
 }
 
 function showResult(c, isDup, prevRoom) {
@@ -369,6 +375,16 @@ function renderHist() {
     </span>
   </div>`).join('');
 }
+
+let _toastTimer = null;
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type || 'ok');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = 'toast'; }, 2500);
+}
 </script>
+<div class="toast" id="toast"></div>
 </body>
 </html>

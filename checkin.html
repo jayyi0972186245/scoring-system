@@ -152,15 +152,17 @@ function doSearchById() {
     matchedCandidates = Object.values(data);
 
     if (matchedCandidates.length === 1) {
-      // 只有一位 → 直接進確認頁
       selectedCandidate = matchedCandidates[0];
       hadDuplicates = false;
       showConfirmStep();
     } else {
-      // 多位重複 → 顯示選擇列表
       hadDuplicates = true;
       showPickStep();
     }
+  }).catch(() => {
+    const err = document.getElementById('err-id');
+    err.textContent = '網路連線失敗，請確認網路後重試';
+    err.style.display = 'block';
   });
 }
 
@@ -219,6 +221,9 @@ function showConfirmStep() {
 // ── 步驟三：完成報到 ──────────────────────────────
 function doCheckin() {
   if (!selectedCandidate) return;
+  const checkinBtn = document.getElementById('checkin-btn');
+  checkinBtn.disabled = true;
+  checkinBtn.textContent = '報到中...';
   db.ref('candidates/' + selectedCandidate.id).update({
     checkedIn: true,
     checkinTime: Date.now(),
@@ -226,6 +231,15 @@ function doCheckin() {
   }).then(() => {
     document.getElementById('done-name').textContent = selectedCandidate.name + '，報到完成！';
     goStep('done');
+  }).catch(() => {
+    checkinBtn.disabled = false;
+    checkinBtn.textContent = '✅ 確認以上資料，完成報到';
+    const warn = document.getElementById('already-warn');
+    warn.style.display = 'block';
+    warn.style.background = '#fef2f2';
+    warn.style.borderColor = '#fecaca';
+    warn.style.color = '#dc2626';
+    warn.textContent = '⚠️ 網路連線失敗，請確認網路後重試';
   });
 }
 

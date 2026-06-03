@@ -98,6 +98,11 @@ body{font-family:'Noto Sans TC',sans-serif;background:var(--bg);color:var(--t);m
 .btn-dismiss:hover{background:rgba(63,185,80,.08)}
 
 @media(max-width:680px){.app-wrap{grid-template-columns:1fr;height:auto}.sidebar{max-height:240px;border-right:none;border-bottom:1px solid var(--b)}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--s2);border:1px solid var(--b);border-radius:12px;padding:12px 22px;font-size:14px;font-weight:600;opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;white-space:nowrap}
+.toast.show{opacity:1}
+.toast.ok{border-color:var(--g);color:var(--g)}
+.toast.warn{border-color:var(--y);color:var(--y)}
+.toast.err{border-color:var(--r);color:var(--r)}
 </style>
 </head>
 <body>
@@ -456,6 +461,8 @@ function submitScore(candidateId) {
   const inp = document.getElementById('sinp-' + candidateId);
   const v = parseInt(inp?.value);
   if (isNaN(v) || v < 0 || v > 100) { alert('請輸入 0 到 100 的整數'); return; }
+  const subBtn = document.querySelector('#sc-' + candidateId + ' .btn-submit');
+  if (subBtn) { subBtn.disabled = true; subBtn.textContent = '送出中...'; }
   db.ref('candidates/' + candidateId + '/interviewScores/' + teacher.name).set(v)
     .then(() => {
       // 評分寫入後，檢查目前這組是否所有老師都已評完所有考生
@@ -484,12 +491,26 @@ function submitScore(candidateId) {
           }
         });
       });
+    }).catch(() => {
+      const btn = document.querySelector('#sc-' + candidateId + ' .btn-submit');
+      if (btn) { btn.disabled = false; btn.textContent = '✓ 確認送出 的分數'; }
+      showToast('❌ 評分失敗，請確認網路後重試', 'err');
     });
 }
 
 function editScore(candidateId) {
   db.ref('candidates/' + candidateId + '/interviewScores/' + teacher.name).remove();
 }
+
+let _toastTimer = null;
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + (type || 'ok');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.className = 'toast'; }, 2500);
+}
 </script>
+<div class="toast" id="toast"></div>
 </body>
 </html>
