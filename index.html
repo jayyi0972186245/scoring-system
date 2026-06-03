@@ -774,32 +774,32 @@ function clearQueue() {
 }
 
 function exportCSV() {
-  // 從 teacherList 動態取得面試老師（依名稱排序，最多取前2位）
+  // 動態取得面試老師（依名稱排序）
   const ivTeacherNames = Object.values(teacherList)
     .filter(t => t.type === 'interview')
     .sort((a, b) => a.name.localeCompare(b.name))
     .map(t => t.name);
 
-  // 依教室分組術科老師，每室最多2位
-  // 實際上術科評分是依老師名稱為 key，取前2位即可
+  // 動態取得術科老師（依教室再依名稱排序）
   const prTeacherNames = Object.values(teacherList)
     .filter(t => t.type === 'practical')
     .sort((a, b) => (a.room || '').localeCompare(b.room || '') || a.name.localeCompare(b.name))
     .map(t => t.name);
 
-  // 動態標頭：面試老師(黃祥熙)、面試老師(陳慧萍)、面試平均、術科老師(XXX)...
-  const ivHeaders = ivTeacherNames.map(n => `面試老師(${n})`);
-  const prHeaders = prTeacherNames.map(n => `術科老師(${n})`);
-  // 若系統裡沒有任何老師資料，至少保留2個空欄位
-  const ivCols = ivHeaders.length || 2;
-  const prCols = prHeaders.length || 2;
+  // 面試標頭：面試老師(黃祥熙)  面試老師(陳慧萍)  面試平均
+  const ivNameHeaders  = (ivTeacherNames.length ? ivTeacherNames : ['老師1', '老師2']).map((_, i) => `面試老師${i + 1}`);
+  const ivScoreHeaders = (ivTeacherNames.length ? ivTeacherNames : ['老師1', '老師2']).map((_, i) => `面試評分${i + 1}`);
 
+  // 術科標頭：術科委員1  術科委員2  評分(術科委員1)  評分(術科委員2)  術科平均
+  const prCount = prTeacherNames.length || 2;
+  const prNameHeaders  = Array.from({ length: prCount }, (_, i) => `術科委員${i + 1}`);
+  const prScoreHeaders = Array.from({ length: prCount }, (_, i) => `評分(術科委員${i + 1})`);
+
+  // 交錯排列：術科委員1 術科委員2 評分(術科委員1) 評分(術科委員2) 術科平均
   const header = [
     '序號', '姓名', '身分證末四碼', '手機末三碼', '畢業系別', '就讀學校', '報到',
-    ...(ivHeaders.length ? ivHeaders : ['面試老師1', '面試老師2']),
-    '面試平均',
-    ...(prHeaders.length ? prHeaders : ['術科老師1', '術科老師2']),
-    '術科平均',
+    ...ivNameHeaders, ...ivScoreHeaders, '面試平均',
+    ...prNameHeaders, ...prScoreHeaders, '術科平均',
     '指派教室'
   ];
 
@@ -813,25 +813,28 @@ function exportCSV() {
       const ivAvg = avg(ivScores);
       const prAvg = avg(prScores);
 
-      // 面試：依 ivTeacherNames 順序取各老師分數，格式 90(黃祥熙)
-      const ivCells = (ivTeacherNames.length ? ivTeacherNames : ['', '']).map(name => {
-        const score = ivScores[name];
-        return score !== undefined && score !== null ? `${score}(${name})` : '';
+      // 面試：老師名稱欄（固定順序） + 對應分數欄
+      const ivNames  = (ivTeacherNames.length ? ivTeacherNames : ['', '']).map(n => n);
+      const ivScoreVals = ivNames.map(name => {
+        const s = ivScores[name];
+        return s !== undefined && s !== null ? s : '';
       });
 
-      // 術科：依 prTeacherNames 順序取各老師分數，格式 80(洪宗乾)
-      const prCells = (prTeacherNames.length ? prTeacherNames : ['', '']).map(name => {
-        const score = prScores[name];
-        return score !== undefined && score !== null ? `${score}(${name})` : '';
+      // 術科：老師名稱欄 + 對應分數欄（老師名稱來自 prTeacherNames，
+      //        但實際評分 key 是老師名字，所以按順序對應）
+      const prNames = (prTeacherNames.length ? prTeacherNames : ['', '']).map(n => n);
+      const prScoreVals = prNames.map(name => {
+        const s = prScores[name];
+        return s !== undefined && s !== null ? s : '';
       });
 
       rows.push([
         c.regNo, c.name, c.idLast4 || '', c.phoneLast3 || '',
         c.dept || '', c.school || '',
         c.checkedIn ? '已報到' : '未報到',
-        ...ivCells,
+        ...ivNames, ...ivScoreVals,
         ivAvg !== null ? ivAvg.toFixed(1) : '',
-        ...prCells,
+        ...prNames, ...prScoreVals,
         prAvg !== null ? prAvg.toFixed(1) : '',
         c.assignedRoom || ''
       ]);
