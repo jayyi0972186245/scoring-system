@@ -34,13 +34,14 @@ function matchSearch(c, q) {
   const regStr = String(c.regNo || '');
   let regMatch = false;
   if (/^\d+$/.test(q)) {
-    // 純數字：比對序號末N碼（N = 輸入長度），精確相等
     regMatch = regStr.slice(-q.length) === q && regStr.length >= q.length;
   } else {
     regMatch = regStr.includes(q);
   }
   return nameMatch || regMatch;
 }
+
+// ===================== 導覽列 CSS =====================
 const NAV_CSS = `
   .sys-nav{background:#010409;border-bottom:1px solid #21262d;position:sticky;top:0;z-index:999;font-family:'Noto Sans TC',sans-serif}
   .sys-nav-inner{max-width:1200px;margin:0 auto;padding:0 16px;display:flex;align-items:center;height:46px}
@@ -63,23 +64,23 @@ function buildNav(currentPage, userName, logoutFn) {
   const p = location.pathname;
   const base = location.origin + p.substring(0, p.lastIndexOf('/') + 1);
   const pages = [
-    { id: 'index',         label: '🏠 管理後台', href: base + 'index.html' },
-    { id: 'scan',          label: '📱 術科掃碼',  href: base + 'scan.html' },
-    { id: 'interview-scan', label: '🎤 面試掃碼',  href: base + 'interview-scan.html' },
-    { id: 'interview',     label: '🎤 面試評分',  href: base + 'interview.html' },
-    { id: 'practical',     label: '✏️ 術科評分',  href: base + 'practical.html' },
-    { id: 'results',       label: '📊 成績總表',  href: base + 'results.html' },
+    { id: 'index',          label: '🏠 管理後台', href: base + 'index.html' },
+    { id: 'interview-scan', label: '🎤 面試掃碼', href: base + 'interview-scan.html' },
+    { id: 'scan',           label: '📱 術科掃碼', href: base + 'scan.html' },
+    { id: 'interview',      label: '🎤 面試評分', href: base + 'interview.html' },
+    { id: 'practical',      label: '✏️ 術科評分', href: base + 'practical.html' },
+    { id: 'results',        label: '📊 成績總表', href: base + 'results.html' },
   ];
   const links = pages.map(pg =>
-    `<a href="${pg.href}" class="sys-nav-link${pg.id===currentPage?' active':''}">${pg.label}</a>`
+    `<a href="${pg.href}" class="sys-nav-link${pg.id === currentPage ? ' active' : ''}">${pg.label}</a>`
   ).join('');
   return `<nav class="sys-nav"><div class="sys-nav-inner">
     <a href="${base}index.html" class="sys-nav-logo">評分系統</a>
     <div class="sys-nav-links">${links}</div>
     <div class="sys-nav-right">
       <span class="sys-nav-dot"></span>
-      ${userName?`<span class="sys-nav-user">${userName}</span>`:''}
-      ${logoutFn?`<button class="sys-nav-logout" onclick="${logoutFn}">登出</button>`:''}
+      ${userName ? `<span class="sys-nav-user">${userName}</span>` : ''}
+      ${logoutFn ? `<button class="sys-nav-logout" onclick="${logoutFn}">登出</button>` : ''}
     </div>
   </div></nav>`;
 }
