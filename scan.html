@@ -157,6 +157,13 @@ function doLogin() {
     const data = snap.val();
     if (!data) { document.getElementById('err-login').style.display = 'block'; return; }
     const staff = Object.values(data)[0];
+    // CM316 是面試工作人員，不能登入術科掃碼頁
+    if (staff.room === 'CM316') {
+      const errEl = document.getElementById('err-login');
+      errEl.style.display = 'block';
+      errEl.textContent = '此帳號為面試工作人員，請使用 interview-scan.html';
+      return;
+    }
     myRoom = staff.room;
     myName = staff.name;
     document.getElementById('LP').style.display = 'none';
