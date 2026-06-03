@@ -774,14 +774,73 @@ function clearQueue() {
 }
 
 function exportCSV() {
-  const rows = [['序號', '姓名', '身分證末四碼', '手機末三碼', '畢業系別', '就讀學校', '報到', '面試平均', '術科平均', '術科老師1', '術科老師2', '指派教室']];
-  Object.values(candidates).sort((a, b) => String(a.regNo).localeCompare(String(b.regNo))).forEach(c => {
-    const prTeachers = Object.keys(c.practicalScores || {});
-    rows.push([c.regNo, c.name, c.idLast4, c.phoneLast3, c.dept, c.school, c.checkedIn ? '已報到' : '未報到', avg(c.interviewScores)?.toFixed(1) || '', avg(c.practicalScores)?.toFixed(1) || '', prTeachers[0] || '', prTeachers[1] || '', c.assignedRoom || '']);
-  });
+  // 從 teacherList 動態取得面試老師（依名稱排序，最多取前2位）
+  const ivTeacherNames = Object.values(teacherList)
+    .filter(t => t.type === 'interview')
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(t => t.name);
+
+  // 依教室分組術科老師，每室最多2位
+  // 實際上術科評分是依老師名稱為 key，取前2位即可
+  const prTeacherNames = Object.values(teacherList)
+    .filter(t => t.type === 'practical')
+    .sort((a, b) => (a.room || '').localeCompare(b.room || '') || a.name.localeCompare(b.name))
+    .map(t => t.name);
+
+  // 動態標頭：面試老師(黃祥熙)、面試老師(陳慧萍)、面試平均、術科老師(XXX)...
+  const ivHeaders = ivTeacherNames.map(n => `面試老師(${n})`);
+  const prHeaders = prTeacherNames.map(n => `術科老師(${n})`);
+  // 若系統裡沒有任何老師資料，至少保留2個空欄位
+  const ivCols = ivHeaders.length || 2;
+  const prCols = prHeaders.length || 2;
+
+  const header = [
+    '序號', '姓名', '身分證末四碼', '手機末三碼', '畢業系別', '就讀學校', '報到',
+    ...(ivHeaders.length ? ivHeaders : ['面試老師1', '面試老師2']),
+    '面試平均',
+    ...(prHeaders.length ? prHeaders : ['術科老師1', '術科老師2']),
+    '術科平均',
+    '指派教室'
+  ];
+
+  const rows = [header];
+
+  Object.values(candidates)
+    .sort((a, b) => String(a.regNo).localeCompare(String(b.regNo)))
+    .forEach(c => {
+      const ivScores = c.interviewScores || {};
+      const prScores = c.practicalScores || {};
+      const ivAvg = avg(ivScores);
+      const prAvg = avg(prScores);
+
+      // 面試：依 ivTeacherNames 順序取各老師分數，格式 90(黃祥熙)
+      const ivCells = (ivTeacherNames.length ? ivTeacherNames : ['', '']).map(name => {
+        const score = ivScores[name];
+        return score !== undefined && score !== null ? `${score}(${name})` : '';
+      });
+
+      // 術科：依 prTeacherNames 順序取各老師分數，格式 80(洪宗乾)
+      const prCells = (prTeacherNames.length ? prTeacherNames : ['', '']).map(name => {
+        const score = prScores[name];
+        return score !== undefined && score !== null ? `${score}(${name})` : '';
+      });
+
+      rows.push([
+        c.regNo, c.name, c.idLast4 || '', c.phoneLast3 || '',
+        c.dept || '', c.school || '',
+        c.checkedIn ? '已報到' : '未報到',
+        ...ivCells,
+        ivAvg !== null ? ivAvg.toFixed(1) : '',
+        ...prCells,
+        prAvg !== null ? prAvg.toFixed(1) : '',
+        c.assignedRoom || ''
+      ]);
+    });
+
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(rows.map(r => r.join(',')).join('\n'));
-  a.download = '考生名單.csv'; a.click();
+  a.download = '考生名單.csv';
+  a.click();
 }
 function printAllQR() {
   const base = location.origin + location.pathname.replace('index.html', '') + 'scan.html?id=';
